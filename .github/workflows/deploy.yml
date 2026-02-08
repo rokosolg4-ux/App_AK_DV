@@ -20,6 +20,18 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            git pull
-            docker compose down
+            # 1. Останавливаем все старые контейнеры, чтобы освободить порты
+            docker kill $(docker ps -q) || true
+            docker rm $(docker ps -a -q) || true
+            
+            # 2. Удаляем старую папку проекта (на всякий случай)
+            rm -rf App_AK_DV
+
+            # 3. Скачиваем проект заново начисто
+            git clone https://github.com/rokosolg4-ux/App_AK_DV.git App_AK_DV
+            
+            # 4. Заходим внутрь
+            cd App_AK_DV
+
+            # 5. Запускаем
             docker compose up -d --build

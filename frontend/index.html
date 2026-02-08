@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Главная | Автокраски ДВ</title>
+    <style>
+        /* === ПАЛИТРА === */
+        :root {
+            --neon-green: #00ffa3;
+            --neon-blue: #2e86de;
+            --neon-purple: #a55eea;
+            --neon-yellow: #f1c40f;
+            --neon-red: #ff5e57;
+            
+            --bg-dark: #050505;
+            /* DEEP GLASS: Более темное, насыщенное стекло */
+            --glass-bg: rgba(20, 20, 20, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-glow: rgba(255, 255, 255, 0.15);
+            --shadow-soft: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        body {
+            margin: 0; background-color: var(--bg-dark); color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+            min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden;
+        }
+
+        /* === ЖИВОЙ ФОН === */
+        .background-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; background: #000; }
+        .noise {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; opacity: 0.04; pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+        }
+        
+        .orb { position: absolute; border-radius: 50%; filter: blur(120px); opacity: 0.5; animation: float 20s infinite ease-in-out alternate; }
+        .orb-1 { width: 900px; height: 900px; background: radial-gradient(circle, var(--neon-blue) 0%, transparent 70%); top: -300px; left: -200px; }
+        .orb-2 { width: 700px; height: 700px; background: radial-gradient(circle, var(--neon-green) 0%, transparent 70%); bottom: -200px; right: -200px; }
+        .orb-3 { width: 600px; height: 600px; background: radial-gradient(circle, var(--neon-purple) 0%, transparent 70%); top: 30%; right: 10%; opacity: 0.3; animation-duration: 30s; }
+
+        @keyframes float { 0% { transform: translate(0, 0); } 100% { transform: translate(40px, 40px); } }
+
+        /* === ШАПКА === */
+        .header {
+            padding: 20px 40px; display: flex; justify-content: space-between; align-items: center;
+            z-index: 100;
+        }
+        .logo { font-size: 1.2rem; font-weight: 700; letter-spacing: 1px; color: #fff; text-shadow: 0 0 20px rgba(255,255,255,0.3); }
+        .header-right { display: flex; align-items: center; gap: 20px; }
+        
+        /* Переключатель филиала (Pill style) */
+        .branch-pill {
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1);
+            color: #ccc; padding: 8px 16px; border-radius: 30px; font-size: 0.85rem; cursor: pointer;
+            transition: 0.3s; outline: none; appearance: none;
+        }
+        .branch-pill:hover { background: rgba(255,255,255,0.2); color: #fff; border-color: #fff; }
+
+        .user-profile { width: 35px; height: 35px; background: linear-gradient(135deg, #ddd, #fff); border-radius: 50%; cursor: pointer; }
+
+        /* === ЦЕНТРАЛЬНАЯ ЧАСТЬ === */
+        .main-container {
+            flex: 1; display: flex; flex-direction: column; align-items: center;
+            padding: 20px 20px 60px 20px; gap: 50px;
+        }
+
+        /* === OMNI SEARCH (ГЛАВНЫЙ ЭЛЕМЕНТ) === */
+        .search-wrapper {
+            width: 100%; max-width: 700px; position: relative;
+            margin-top: 20px;
+        }
+        
+        .omni-search {
+            width: 100%;
+            background: rgba(10, 10, 10, 0.6);
+            border: 1px solid rgba(255,255,255,0.15);
+            backdrop-filter: blur(20px);
+            padding: 20px 25px 20px 60px; /* Отступ слева под иконку */
+            border-radius: 20px;
+            color: #fff; font-size: 1.2rem;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .search-icon {
+            position: absolute; left: 20px; top: 50%; transform: translateY(-50%);
+            font-size: 1.4rem; color: #666; transition: 0.3s;
+        }
+
+        /* Эффект фокуса: свечение */
+        .omni-search:focus {
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 30px rgba(46, 134, 222, 0.3), inset 0 1px 1px rgba(255,255,255,0.1);
+            background: rgba(20, 20, 20, 0.8);
+        }
+        .omni-search:focus + .search-icon { color: var(--neon-blue); }
+
+        /* === KPI WIDGETS (Минимализм) === */
+        .kpi-row {
+            display: flex; gap: 30px; justify-content: center; flex-wrap: wrap;
+        }
+
+        .kpi-item {
+            display: flex; flex-direction: column; align-items: center; gap: 5px;
+            padding: 10px 20px; border-radius: 15px;
+            transition: 0.3s; cursor: default;
+        }
+        .kpi-item:hover { background: rgba(255,255,255,0.05); }
+
+        .kpi-val { font-size: 2rem; font-weight: 700; letter-spacing: -1px; }
+        .kpi-lbl { font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+        
+        /* Цвета значений */
+        .val-money { background: linear-gradient(to right, #fff, var(--neon-green)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .val-plan { color: var(--neon-blue); }
+        .val-alert { color: var(--neon-red); }
+
+        /* === СЕТКА МОДУЛЕЙ (AIRY) === */
+        .modules-container {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 40px; width: 100%; max-width: 1200px;
+        }
+
+        .glass-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 30px;
+            backdrop-filter: blur(40px);
+            box-shadow: var(--shadow-soft);
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative; overflow: hidden;
+            display: flex; flex-direction: column; gap: 20px;
+        }
+
+        /* Красивое свечение сверху */
+        .glass-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--glass-glow), transparent);
+        }
+
+        .glass-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            border-color: rgba(255,255,255,0.2);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+        }
+
+        .card-head { display: flex; align-items: center; gap: 15px; }
+        .card-icon { 
+            font-size: 2rem; width: 60px; height: 60px; border-radius: 16px; 
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);
+            transition: 0.3s;
+        }
+        .card-title { font-size: 1.5rem; font-weight: 600; }
+        .card-sub { font-size: 0.9rem; color: #888; }
+
+        /* Ссылки внутри карточек */
+        .links-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+        .smart-link {
+            text-decoration: none; color: #aaa; padding: 10px 15px; border-radius: 10px;
+            font-size: 0.95rem; display: flex; justify-content: space-between; align-items: center;
+            transition: 0.2s; border: 1px solid transparent;
+        }
+        .smart-link:hover {
+            background: rgba(255,255,255,0.05); color: #fff; border-color: rgba(255,255,255,0.1);
+            padding-left: 20px;
+        }
+        .smart-link.active { background: rgba(255,255,255,0.08); color: #fff; font-weight: 500; border-color: rgba(255,255,255,0.15); }
+
+        /* Hover эффекты по темам */
+        .glass-card:hover .card-icon { background: #fff; color: #000; box-shadow: 0 0 30px rgba(255,255,255,0.5); }
+        
+        .theme-sales:hover .card-icon { background: var(--neon-green); box-shadow: 0 0 30px var(--neon-green); }
+        .theme-buy:hover .card-icon { background: var(--neon-yellow); box-shadow: 0 0 30px var(--neon-yellow); }
+        .theme-wh:hover .card-icon { background: var(--neon-blue); box-shadow: 0 0 30px var(--neon-blue); }
+        .theme-adm:hover .card-icon { background: var(--neon-purple); box-shadow: 0 0 30px var(--neon-purple); }
+
+    </style>
+</head>
+<body>
+
+    <div class="background-container">
+        <div class="noise"></div>
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+
+    <header class="header">
+        <div class="logo">АВТОКРАСКИ ДВ <span style="opacity:0.5; font-weight:300;">PRO</span></div>
+        
+        <div class="header-right">
+            <select class="branch-pill" onchange="updateDashboard()">
+                <option value="all">Все филиалы</option>
+                <option value="shevchuka">Шевчука 22А</option>
+                <option value="shelesta">Шелеста 12</option>
+            </select>
+
+            <div class="user-profile" onclick="toggleRole()" title="Сменить роль"></div>
+        </div>
+    </header>
+
+    <main class="main-container">
+
+        <div class="search-wrapper">
+            <input type="text" class="omni-search" placeholder="Поиск: Mipa, счет 45, клиент...">
+            <div class="search-icon">🔍</div>
+        </div>
+
+        <div class="kpi-row" id="kpiRow">
+            <div class="kpi-item">
+                <div class="kpi-val val-money" id="kpiRevenue">0 ₽</div>
+                <div class="kpi-lbl">Выручка сегодня</div>
+            </div>
+            <div class="kpi-item">
+                <div class="kpi-val val-plan" id="kpiPlan">0%</div>
+                <div class="kpi-lbl">План продаж</div>
+            </div>
+            <div class="kpi-item">
+                <div class="kpi-val val-alert" id="kpiTasks">0</div>
+                <div class="kpi-lbl">Срочные задачи</div>
+            </div>
+        </div>
+
+        <div class="modules-container">
+            
+            <div class="glass-card theme-sales">
+                <div class="card-head">
+                    <div class="card-icon">₽</div>
+                    <div><div class="card-title">Продажи</div><div class="card-sub">Клиенты и касса</div></div>
+                </div>
+                <div class="links-list">
+                    <a href="sales_reports.html" class="smart-link active">📊 Отчеты продаж (AI) <span>→</span></a>
+                    <a href="#" class="smart-link">РМК (Касса)</a>
+                    <a href="clients.html" class="smart-link">👥 Клиенты (CRM)</a>
+                    <a href="#" class="smart-link">Счета и Договоры</a>
+                </div>
+            </div>
+
+            <div class="glass-card theme-buy">
+                <div class="card-head">
+                    <div class="card-icon">🚛</div>
+                    <div><div class="card-title">Закупки</div><div class="card-sub">Снабжение</div></div>
+                </div>
+                <div class="links-list">
+                    <a href="supplies_list.html" class="smart-link active">Журнал поступлений <span>→</span></a>
+                    <a href="#" class="smart-link">Заказы поставщикам</a>
+                    <a href="#" class="smart-link">Справочник поставщиков</a>
+                    <a href="#" class="smart-link">Акты сверок</a>
+                </div>
+            </div>
+
+            <div class="glass-card theme-wh">
+                <div class="card-head">
+                    <div class="card-icon">📦</div>
+                    <div><div class="card-title">Склад</div><div class="card-sub">Запасы и цены</div></div>
+                </div>
+                <div class="links-list">
+                    <a href="catalog.html" class="smart-link active">Остатки (Номенклатура) <span>→</span></a>
+                    <a href="#" class="smart-link">Инвентаризация</a>
+                    <a href="#" class="smart-link">Перемещение</a>
+                    <a href="#" class="smart-link">Списание / Брак</a>
+                </div>
+            </div>
+
+            <div class="glass-card theme-adm">
+                <div class="card-head">
+                    <div class="card-icon">⚙️</div>
+                    <div><div class="card-title">Админ</div><div class="card-sub">Конфигурация</div></div>
+                </div>
+                <div class="links-list">
+                    <a href="#" class="smart-link">Пользователи и права</a>
+                    <a href="#" class="smart-link">Реквизиты компании</a>
+                    <a href="#" class="smart-link">Настройки API</a>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <script>
+        // Анимация параллакса (плавная)
+        document.addEventListener('mousemove', (e) => {
+            const x = (window.innerWidth - e.pageX) / 50;
+            const y = (window.innerHeight - e.pageY) / 50;
+            
+            document.querySelector('.orb-1').style.transform = `translate(${x}px, ${y}px)`;
+            document.querySelector('.orb-2').style.transform = `translate(${-x}px, ${-y}px)`;
+        });
+
+        // Логика показателей
+        let role = 'admin';
+        
+        function toggleRole() {
+            role = role === 'admin' ? 'manager' : 'admin';
+            alert('Роль переключена на: ' + (role === 'admin' ? 'Директор' : 'Менеджер'));
+            updateDashboard();
+        }
+
+        function updateDashboard() {
+            const branch = document.querySelector('.branch-pill').value;
+            const revEl = document.getElementById('kpiRevenue');
+            
+            // Скрываем выручку для менеджера
+            if (role === 'manager') {
+                revEl.parentElement.style.display = 'none';
+            } else {
+                revEl.parentElement.style.display = 'flex';
+            }
+
+            // Данные
+            let rev = 145200;
+            let plan = 68;
+            let tasks = 5;
+
+            if (branch === 'shevchuka') { rev = 82500; plan = 75; tasks = 2; }
+            if (branch === 'shelesta') { rev = 41000; plan = 45; tasks = 1; }
+
+            // Анимация чисел (простая)
+            revEl.innerText = rev.toLocaleString() + ' ₽';
+            document.getElementById('kpiPlan').innerText = plan + '%';
+            document.getElementById('kpiTasks').innerText = tasks;
+        }
+
+        // Старт
+        updateDashboard();
+    </script>
+</body>
+</html>

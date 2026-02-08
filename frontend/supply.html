@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Приемка | Автокраски ДВ</title>
+    <style>
+        /* == СТИЛЬ: Liquid Cyberpunk == */
+        body {
+            background-color: #050505; color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            padding: 40px; display: flex; flex-direction: column; align-items: center; min-height: 100vh;
+        }
+        h1 {
+            font-weight: 200; margin-bottom: 30px;
+            background: linear-gradient(90deg, #00f260, #0575E6);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            font-size: 2rem; width: 100%; max-width: 1100px;
+        }
+        .glass-panel {
+            width: 100%; max-width: 1100px; background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 30px; margin-bottom: 20px;
+        }
+        .form-row { display: flex; gap: 30px; margin-bottom: 20px; }
+        .input-group { display: flex; flex-direction: column; flex: 1; }
+        label { font-size: 0.8rem; color: #888; margin-bottom: 8px; text-transform: uppercase; }
+        input, select {
+            background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff; padding: 12px; border-radius: 10px; font-size: 1rem; outline: none; width: 100%;
+        }
+        input:focus { border-color: #0575E6; }
+        
+        /* Таблица */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { text-align: left; padding: 15px; color: #666; font-size: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        td { padding: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.03); }
+        td input { background: transparent; border: none; padding: 5px; }
+
+        /* Кнопки */
+        .btn { padding: 12px 30px; border-radius: 12px; font-weight: 600; cursor: pointer; border: none; text-decoration: none; }
+        .btn-primary { background: linear-gradient(90deg, #00f260, #0575E6); color: #fff; }
+        .btn-pick {
+            background: rgba(5, 117, 230, 0.2); color: #0575E6; border: 1px solid rgba(5, 117, 230, 0.4);
+            padding: 10px 25px; border-radius: 10px; transition: all 0.3s;
+        }
+        .btn-pick:hover { background: rgba(5, 117, 230, 0.4); color: #fff; box-shadow: 0 0 15px rgba(5, 117, 230, 0.4); }
+
+        /* === МОДАЛЬНОЕ ОКНО === */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85); z-index: 100;
+            display: none; justify-content: center; align-items: center;
+            backdrop-filter: blur(10px);
+        }
+        .modal-window {
+            width: 1000px; height: 80vh; display: flex; flex-direction: column;
+            background: #0a0a0a; border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px; overflow: hidden; box-shadow: 0 50px 100px rgba(0,0,0,0.9);
+        }
+        
+        /* Верхняя панель поиска */
+        .search-bar-area {
+            padding: 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255,255,255,0.02); display: flex; gap: 15px; align-items: center;
+        }
+        .search-input {
+            background: #000; border: 1px solid #333; padding: 15px; border-radius: 12px;
+            color: #fff; font-size: 1.1rem; width: 100%;
+        }
+        .search-input:focus { border-color: #00f260; box-shadow: 0 0 15px rgba(0, 242, 96, 0.1); }
+
+        .modal-body { display: flex; flex: 1; overflow: hidden; }
+
+        /* Дерево категорий */
+        .cat-sidebar {
+            width: 300px; background: rgba(255, 255, 255, 0.02);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 10px; overflow-y: auto;
+        }
+        .cat-item {
+            padding: 10px; cursor: pointer; border-radius: 6px; margin-bottom: 2px;
+            color: #aaa; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;
+        }
+        .cat-item:hover { background: rgba(255, 255, 255, 0.05); color: #fff; }
+        .cat-item.active { color: #00f260; background: rgba(0, 242, 96, 0.1); font-weight: bold; }
+        .sub-cat { margin-left: 20px; border-left: 1px solid #333; }
+
+        /* Сетка товаров */
+        .prod-area { flex: 1; padding: 20px; overflow-y: auto; background: #050505; }
+        .prod-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; }
+        
+        .prod-card {
+            background: #111; border: 1px solid #222; padding: 15px; border-radius: 12px;
+            cursor: pointer; transition: all 0.1s; position: relative;
+        }
+        .prod-card:hover { border-color: #0575E6; background: #161616; }
+        .prod-card:active { transform: scale(0.95); }
+        
+        .prod-brand { font-size: 0.7rem; color: #555; text-transform: uppercase; margin-bottom: 5px; }
+        .prod-name { font-size: 0.95rem; line-height: 1.4; margin-bottom: 10px; min-height: 40px; }
+        .prod-price { font-weight: bold; color: #00f260; font-size: 1.1rem; }
+        
+        /* Анимация добавления */
+        @keyframes flash { 0% { background: #111; } 50% { background: rgba(0, 242, 96, 0.2); } 100% { background: #111; } }
+        .added-flash { animation: flash 0.3s ease-out; border-color: #00f260 !important; }
+
+        .modal-close { position: absolute; top: 15px; right: 20px; font-size: 2rem; cursor: pointer; color: #666; z-index: 200; }
+    </style>
+</head>
+<body>
+
+    <h1>Новая поставка</h1>
+
+    <div class="glass-panel">
+        <div class="form-row">
+            <div class="input-group">
+                <label>Номер документа</label>
+                <input type="text" id="docNumber" value="DOC-2026/003">
+            </div>
+            <div class="input-group">
+                <label>Поставщик</label>
+                <select id="supplierSelect"></select>
+            </div>
+        </div>
+    </div>
+
+    <div class="glass-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <label style="margin:0; font-size: 1rem; color: #fff;">Товары к приемке</label>
+            <button class="btn-pick" onclick="openCatalog()">🔍 Подобрать товары</button>
+        </div>
+
+        <table id="itemsTable">
+            <thead>
+                <tr><th style="width: 50%">Товар</th><th style="width: 15%">Кол-во</th><th>Цена</th><th>Сумма</th><th></th></tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <div class="glass-panel" style="background: transparent; border: none; padding: 0;">
+        <div style="display: flex; justify-content: flex-end; gap: 15px;">
+            <a href="supplies_list.html" class="btn" style="background: rgba(255,255,255,0.1); color: #ccc;">Отмена</a>
+            <button class="btn btn-primary" onclick="postDocument()">Принять на баланс</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="catalogModal" onclick="if(event.target === this) closeCatalog()">
+        <div class="modal-window">
+            <div class="modal-close" onclick="closeCatalog()">×</div>
+            
+            <div class="search-bar-area">
+                <input type="text" class="search-input" id="searchInput" placeholder="Поиск по наименованию или бренду..." oninput="debounceSearch()">
+            </div>
+
+            <div class="modal-body">
+                <div class="cat-sidebar" id="categoryTree">
+                    </div>
+                <div class="prod-area">
+                    <div class="prod-grid" id="productList">
+                        </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Инициализация
+        let allCategories = [];
+        let currentCatId = null;
+
+        async function init() {
+            const supRes = await fetch('http://localhost:3000/suppliers');
+            const suppliers = await supRes.json();
+            const supSelect = document.getElementById('supplierSelect');
+            suppliers.forEach(s => supSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`);
+        }
+
+        // --- ЛОГИКА КАТАЛОГА ---
+
+        async function openCatalog() {
+            document.getElementById('catalogModal').style.display = 'flex';
+            document.getElementById('searchInput').focus();
+            if (allCategories.length === 0) {
+                const res = await fetch('http://localhost:3000/categories');
+                allCategories = await res.json();
+                renderTree(null, document.getElementById('categoryTree'));
+                loadProducts(); // Грузим всё сразу или популярное
+            }
+        }
+
+        function closeCatalog() { document.getElementById('catalogModal').style.display = 'none'; }
+
+        // Рекурсивный рендер дерева
+        function renderTree(parentId, container) {
+            const children = allCategories.filter(c => c.parent_id === parentId);
+            if (children.length === 0) return;
+
+            children.forEach(cat => {
+                const div = document.createElement('div');
+                const hasSub = allCategories.some(c => c.parent_id === cat.id);
+                const icon = hasSub ? '📁' : '🔹';
+                
+                div.innerHTML = `
+                    <div class="cat-item" onclick="selectCategory(${cat.id}, this)">
+                        <span>${icon} ${cat.name}</span>
+                    </div>
+                    <div class="sub-cat" id="cat-${cat.id}"></div>
+                `;
+                container.appendChild(div);
+                
+                renderTree(cat.id, div.querySelector(`#cat-${cat.id}`));
+            });
+        }
+
+        function selectCategory(id, el) {
+            document.querySelectorAll('.cat-item').forEach(e => e.classList.remove('active'));
+            el.classList.add('active');
+            currentCatId = id;
+            document.getElementById('searchInput').value = '';
+            loadProducts(id);
+        }
+
+        // Загрузка товаров с поиском и фильтром
+        async function loadProducts(catId = null, query = '') {
+            let url = 'http://localhost:3000/products?';
+            if (catId) url += `category_id=${catId}&`;
+            if (query) url += `search=${query}`;
+
+            const res = await fetch(url);
+            const products = await res.json();
+            const grid = document.getElementById('productList');
+            grid.innerHTML = '';
+
+            if(products.length === 0) {
+                grid.innerHTML = '<div style="color:#555; grid-column: 1/-1; text-align:center; margin-top: 50px;">Ничего не найдено</div>';
+                return;
+            }
+
+            products.forEach(p => {
+                const card = document.createElement('div');
+                card.className = 'prod-card';
+                card.onclick = function() { addToDoc(p, card); };
+                card.innerHTML = `
+                    <div class="prod-brand">${p.brand}</div>
+                    <div class="prod-name">${p.name}</div>
+                    <div class="prod-price">${p.price} ₽</div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // "Живой" поиск с задержкой (Debounce)
+        let timeout = null;
+        function debounceSearch() {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                const val = document.getElementById('searchInput').value;
+                if(val.length > 0) {
+                    document.querySelectorAll('.cat-item').forEach(e => e.classList.remove('active'));
+                    currentCatId = null; 
+                }
+                loadProducts(currentCatId, val);
+            }, 300);
+        }
+
+        // Добавление в таблицу
+        function addToDoc(product, cardElement) {
+            cardElement.classList.add('added-flash');
+            setTimeout(() => cardElement.classList.remove('added-flash'), 300);
+
+            const tbody = document.querySelector('#itemsTable tbody');
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>
+                    <input type="hidden" class="prod-id" value="${product.id}">
+                    <span style="font-weight: 500;">${product.name}</span>
+                </td>
+                <td><input type="number" class="qty" value="1" min="1" oninput="calcRow(this)"></td>
+                <td><input type="number" class="price" value="${product.price}" oninput="calcRow(this)"></td>
+                <td><input type="number" class="sum" value="${product.price}" readonly></td>
+                <td style="text-align: center;"><button onclick="this.closest('tr').remove()" style="color: #ff4b2b; background:none; border:none; cursor:pointer;">✕</button></td>
+            `;
+            tbody.insertBefore(tr, tbody.firstChild);
+        }
+
+        function calcRow(elem) {
+            const row = elem.closest('tr');
+            const qty = parseFloat(row.querySelector('.qty').value) || 0;
+            const price = parseFloat(row.querySelector('.price').value) || 0;
+            row.querySelector('.sum').value = (qty * price).toFixed(2);
+        }
+
+        async function postDocument() {
+            const items = [];
+            document.querySelectorAll('#itemsTable tbody tr').forEach(row => {
+                items.push({
+                    product_id: row.querySelector('.prod-id').value,
+                    quantity: row.querySelector('.qty').value,
+                    price: row.querySelector('.price').value
+                });
+            });
+
+            if(items.length === 0) return alert('Список пуст!');
+
+            const res = await fetch('http://localhost:3000/supplies', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    number: document.getElementById('docNumber').value,
+                    supplier_id: document.getElementById('supplierSelect').value,
+                    items: items
+                })
+            });
+
+            // ИЗМЕНЕНИЕ 2: Перенаправление на supplies_list.html
+            if(res.ok) window.location.href = 'supplies_list.html';
+        }
+
+        init();
+    </script>
+</body>
+</html>

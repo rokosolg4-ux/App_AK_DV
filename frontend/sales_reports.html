@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Отчеты по продажам | AI Analytics</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        /* === СТИЛЬ: Deep Glass (Наш фирменный) === */
+        :root {
+            --neon-green: #00ffa3; --neon-blue: #2e86de; --neon-purple: #a55eea; --neon-yellow: #f1c40f;
+            --bg-dark: #050505; --glass-bg: rgba(20, 20, 20, 0.6); --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            background-color: var(--bg-dark); color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+            margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+        }
+
+        /* Шапка */
+        .header {
+            padding: 15px 40px; border-bottom: 1px solid rgba(255,255,255,0.1);
+            background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: space-between;
+        }
+        .logo-area { display: flex; align-items: center; gap: 10px; }
+        .ai-badge { background: linear-gradient(135deg, #a55eea, #2e86de); padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 800; letter-spacing: 1px; }
+
+        .btn-back {
+            background: rgba(255,255,255,0.1); color: #ccc; padding: 8px 16px;
+            border-radius: 10px; text-decoration: none; font-size: 0.9rem; transition: 0.3s;
+        }
+        .btn-back:hover { background: rgba(255,255,255,0.2); color: #fff; }
+
+        /* Рабочая область */
+        .workspace { display: flex; flex: 1; overflow: hidden; }
+
+        /* САЙДБАР (СПИСОК ОТЧЕТОВ) */
+        .sidebar {
+            width: 380px; background: rgba(255,255,255,0.02);
+            border-right: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column;
+        }
+        .sidebar-header { padding: 20px; font-size: 0.8rem; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .report-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex: 1; }
+        
+        .report-item {
+            padding: 15px 20px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.03);
+            transition: 0.2s; display: flex; flex-direction: column; gap: 5px;
+        }
+        .report-item:hover { background: rgba(255,255,255,0.05); }
+        .report-item.active { background: rgba(0, 255, 163, 0.05); border-left: 3px solid var(--neon-green); }
+        
+        .rep-title { font-size: 0.95rem; color: #eee; font-weight: 500; }
+        .rep-meta { font-size: 0.75rem; color: #666; display: flex; gap: 10px; }
+        .author-icon { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #666; }
+
+        /* ГЛАВНАЯ ОБЛАСТЬ (ГРАФИК + AI) */
+        .main-area { flex: 1; padding: 30px; display: flex; flex-direction: column; gap: 30px; overflow-y: auto; }
+        
+        .chart-container {
+            background: var(--glass-bg); border: 1px solid var(--glass-border);
+            border-radius: 20px; padding: 20px; height: 400px; position: relative;
+            backdrop-filter: blur(20px);
+        }
+
+        /* AI БЛОК */
+        .ai-panel {
+            background: linear-gradient(145deg, rgba(20,20,20,0.8), rgba(30,30,40,0.8));
+            border: 1px solid rgba(165, 94, 234, 0.3);
+            border-radius: 20px; padding: 25px; display: flex; gap: 20px;
+            box-shadow: 0 10px 40px rgba(165, 94, 234, 0.1);
+        }
+
+        .ai-avatar {
+            width: 60px; height: 60px; border-radius: 50%;
+            background: radial-gradient(circle, var(--neon-purple), transparent);
+            display: flex; align-items: center; justify-content: center; font-size: 1.8rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(165, 94, 234, 0.4); } 70% { box-shadow: 0 0 0 20px rgba(165, 94, 234, 0); } 100% { box-shadow: 0 0 0 0 rgba(165, 94, 234, 0); } }
+
+        .ai-content { flex: 1; }
+        .ai-title { color: var(--neon-purple); font-size: 0.9rem; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+        .ai-text { font-family: 'Courier New', monospace; font-size: 1rem; color: #ddd; line-height: 1.5; min-height: 60px; }
+        .cursor { display: inline-block; width: 8px; height: 16px; background: var(--neon-purple); animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        .action-btn {
+            background: rgba(165, 94, 234, 0.1); color: var(--neon-purple);
+            border: 1px solid rgba(165, 94, 234, 0.3); padding: 8px 15px; border-radius: 8px;
+            cursor: pointer; font-size: 0.8rem; margin-top: 15px; transition: 0.3s;
+        }
+        .action-btn:hover { background: var(--neon-purple); color: #fff; }
+
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="logo-area">
+            <span style="font-size: 1.4rem;">📊</span>
+            <span style="font-weight: 700; font-size: 1.2rem;">Продажи Аналитика</span>
+            <span class="ai-badge">AI Powered</span>
+        </div>
+        <a href="index.html" class="btn-back">← В меню</a>
+    </div>
+
+    <div class="workspace">
+        <div class="sidebar">
+            <div class="sidebar-header">Доступные отчеты</div>
+            <ul class="report-list" id="reportList">
+                </ul>
+        </div>
+
+        <div class="main-area">
+            
+            <div style="display: flex; justify-content: space-between; align-items: end;">
+                <h2 id="currentReportTitle" style="margin: 0; font-weight: 300; color: #aaa;">Выберите отчет...</h2>
+                <div style="font-size: 0.9rem; color: var(--neon-green);">● Данные обновлены: Только что</div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="salesChart"></canvas>
+            </div>
+
+            <div class="ai-panel">
+                <div class="ai-avatar">✨</div>
+                <div class="ai-content">
+                    <div class="ai-title">AI АНАЛИТИК <span style="font-weight:400; color:#666; margin-left:10px;">Gemma 2 Model</span></div>
+                    <div class="ai-text" id="aiOutput">
+                        Выберите отчет из списка слева, чтобы я провел анализ данных и выявил аномалии.
+                    </div>
+                    <button class="action-btn" onclick="regenerateAI()">🔄 Сгенерировать прогноз на неделю</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // === ДАННЫЕ ОТЧЕТОВ (КАК НА СКРИНЕ) ===
+        const reports = [
+            { title: "Валовая прибыль по полной оплате отгрузок", author: "Рощин Константин" },
+            { title: "Валовая прибыль предприятия - динамика продаж", author: "Рощин Константин" },
+            { title: "Валовая прибыль предприятия - продажи за день", author: "Программист" },
+            { title: "Валовая прибыль - продажи краски", author: "Шадрин Максим" },
+            { title: "Валовая прибыль - продажи по подразделениям", author: "Рощин Константин" },
+            { title: "Валовая прибыль - продажи товара Шевчука", author: "Рощин Константин" },
+            { title: "Продажи товаров Шевчука (Октябрь 2025)", author: "Рощин Константин" },
+            { title: "Продажи товаров Шевчука (Февраль 2026)", author: "Шадрин Максим" }
+        ];
+
+        let myChart = null;
+
+        // 1. Рендер списка
+        const listEl = document.getElementById('reportList');
+        reports.forEach((rep, index) => {
+            const li = document.createElement('li');
+            li.className = 'report-item';
+            li.innerHTML = `
+                <div class="rep-title">${rep.title}</div>
+                <div class="rep-meta">
+                    <span style="display:flex; align-items:center; gap:5px;"><span class="author-icon"></span> Автор: ${rep.author}</span>
+                </div>
+            `;
+            li.onclick = () => loadReport(index, rep.title, li);
+            listEl.appendChild(li);
+        });
+
+        // 2. Функция загрузки отчета (Имитация запроса к AI и БД)
+        async function loadReport(index, title, el) {
+            // Подсветка активного
+            document.querySelectorAll('.report-item').forEach(i => i.classList.remove('active'));
+            if(el) el.classList.add('active');
+            
+            document.getElementById('currentReportTitle').innerText = title;
+
+            // Загрузка демо-данных с сервера
+            const res = await fetch('http://localhost:3000/sales-stats');
+            const data = await res.json();
+
+            // Рисуем график
+            renderChart(data);
+
+            // Запускаем AI печатную машинку
+            typeWriterEffect(data.ai_insight);
+        }
+
+        // 3. Отрисовка графика (Chart.js)
+        function renderChart(data) {
+            const ctx = document.getElementById('salesChart').getContext('2d');
+            
+            if (myChart) myChart.destroy(); // Удаляем старый
+
+            // Градиент для красоты
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(0, 255, 163, 0.5)');
+            gradient.addColorStop(1, 'rgba(0, 255, 163, 0)');
+
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Выручка (₽)',
+                        data: data.revenue,
+                        borderColor: '#00ffa3',
+                        backgroundColor: gradient,
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4 // Плавные линии
+                    },
+                    {
+                        label: 'Прибыль (₽)',
+                        data: data.profit,
+                        borderColor: '#2e86de',
+                        borderWidth: 2,
+                        borderDash: [5, 5], // Пунктир
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#fff' } }
+                    },
+                    scales: {
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#888' } },
+                        x: { grid: { display: false }, ticks: { color: '#888' } }
+                    }
+                }
+            });
+        }
+
+        // 4. Эффект печати AI
+        let typeInterval;
+        function typeWriterEffect(text) {
+            const el = document.getElementById('aiOutput');
+            el.innerHTML = ''; // Очистить
+            let i = 0;
+            clearInterval(typeInterval);
+            
+            // Добавляем курсор
+            const cursor = document.createElement('span');
+            cursor.className = 'cursor';
+            el.appendChild(cursor);
+
+            typeInterval = setInterval(() => {
+                if (i < text.length) {
+                    el.innerHTML = text.substring(0, i+1) + '<span class="cursor"></span>';
+                    i++;
+                } else {
+                    clearInterval(typeInterval);
+                }
+            }, 30); // Скорость печати
+        }
+
+        function regenerateAI() {
+            typeWriterEffect("Генерирую новый прогноз на основе трендов... Вероятность роста продаж на следующей неделе составляет 85% благодаря сезонному фактору.");
+        }
+
+        // Загрузить первый отчет при старте (для демо)
+        loadReport(0, reports[0].title, listEl.firstChild);
+
+    </script>
+</body>
+</html>

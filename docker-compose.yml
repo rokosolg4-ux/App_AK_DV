@@ -1,0 +1,46 @@
+services:
+  # 1. Склад данных
+  db:
+    image: postgres:15
+    container_name: ak_dv_database
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: ak_dv_store
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./database:/var/lib/postgresql/data
+
+  # 2. Мозг системы
+  backend:
+    image: node:20
+    container_name: ak_dv_backend
+    restart: always
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+    environment:
+      DB_HOST: db
+      DB_USER: admin
+      DB_PASSWORD: password123
+      DB_NAME: ak_dv_store
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    command: sh -c "npm install && npm start"
+    depends_on:
+      - db
+
+  # 3. Витрина (Интерфейс)
+  frontend:
+    image: nginx:stable-alpine
+    container_name: ak_dv_frontend
+    restart: always
+    volumes:
+      - ./frontend:/usr/share/nginx/html
+    ports:
+      - "80:80"
+    depends_on:
+      - backend

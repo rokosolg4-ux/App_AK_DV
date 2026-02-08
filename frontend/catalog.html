@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Номенклатура | Автокраски ДВ</title>
+    <style>
+        /* == СТИЛЬ: Liquid Cyberpunk == */
+        body {
+            background-color: #050505; color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0; height: 100vh; display: flex; flex-direction: column;
+            overflow: hidden; /* Скроллить будем области внутри */
+        }
+
+        /* Верхняя панель */
+        .header {
+            padding: 20px 40px; border-bottom: 1px solid rgba(255,255,255,0.1);
+            background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        h1 {
+            font-weight: 200; margin: 0;
+            background: linear-gradient(90deg, #00f260, #0575E6);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            font-size: 1.8rem; letter-spacing: 1px;
+        }
+
+        .btn-back {
+            background: rgba(255,255,255,0.1); color: #ccc;
+            padding: 10px 20px; border-radius: 10px; text-decoration: none; font-weight: 600;
+            transition: 0.3s; font-size: 0.9rem;
+        }
+        .btn-back:hover { background: rgba(255,255,255,0.2); color: #fff; }
+
+        /* ОСНОВНАЯ РАБОЧАЯ ОБЛАСТЬ (Сплит-экран) */
+        .workspace {
+            display: flex; flex: 1; overflow: hidden;
+        }
+
+        /* ЛЕВАЯ КОЛОНКА: ДЕРЕВО */
+        .sidebar {
+            width: 320px; background: rgba(255,255,255,0.02);
+            border-right: 1px solid rgba(255,255,255,0.1);
+            display: flex; flex-direction: column;
+        }
+        
+        .sidebar-header {
+            padding: 20px; font-size: 0.8rem; color: #666; text-transform: uppercase; letter-spacing: 1px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .tree-container {
+            flex: 1; overflow-y: auto; padding: 10px;
+        }
+
+        /* Элементы дерева */
+        .cat-item {
+            padding: 10px 15px; cursor: pointer; border-radius: 8px; margin-bottom: 2px;
+            color: #aaa; font-size: 0.95rem; display: flex; align-items: center; gap: 10px;
+            transition: 0.2s; user-select: none;
+        }
+        .cat-item:hover { background: rgba(255, 255, 255, 0.05); color: #fff; }
+        .cat-item.active { 
+            color: #00f260; background: rgba(0, 242, 96, 0.1); 
+            border: 1px solid rgba(0, 242, 96, 0.2); font-weight: 500;
+        }
+        .sub-cat { margin-left: 24px; border-left: 1px solid #333; }
+
+        /* ПРАВАЯ КОЛОНКА: ТАБЛИЦА */
+        .main-area {
+            flex: 1; display: flex; flex-direction: column; background: #080808;
+        }
+
+        /* Панель поиска */
+        .toolbar {
+            padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex; gap: 20px; align-items: center;
+        }
+        
+        .search-input {
+            background: #111; border: 1px solid #333; padding: 12px 20px; border-radius: 12px;
+            color: #fff; font-size: 1rem; width: 100%; max-width: 500px; outline: none; transition: 0.3s;
+        }
+        .search-input:focus { border-color: #0575E6; box-shadow: 0 0 15px rgba(5, 117, 230, 0.2); }
+
+        /* Таблица */
+        .table-wrapper { flex: 1; overflow-y: auto; padding: 0 20px 20px 20px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        
+        th {
+            text-align: left; padding: 15px; color: #666; position: sticky; top: 0;
+            background: #080808; border-bottom: 1px solid rgba(255,255,255,0.1); z-index: 10;
+            font-size: 0.8rem; text-transform: uppercase;
+        }
+        
+        td { padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.95rem; }
+        tr:hover { background: rgba(255,255,255,0.02); }
+
+        .price { font-weight: bold; color: #fff; }
+        .stock-tag { 
+            display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 0.85rem;
+            background: rgba(255,255,255,0.05); color: #ccc;
+        }
+        .stock-low { color: #ff4b2b; background: rgba(255, 75, 43, 0.1); }
+        .stock-ok { color: #00f260; background: rgba(0, 242, 96, 0.1); }
+
+        /* Кнопка действия */
+        .sell-btn {
+            background: transparent; border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #aaa; padding: 6px 15px; border-radius: 8px; cursor: pointer; transition: 0.2s;
+        }
+        .sell-btn:hover:not(:disabled) { background: #ff4b2b; border-color: #ff4b2b; color: #fff; }
+        .sell-btn:disabled { opacity: 0.2; cursor: not-allowed; border-color: #333; }
+
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Номенклатура</h1>
+        <a href="index.html" class="btn-back">← Главное меню</a>
+    </div>
+
+    <div class="workspace">
+        <div class="sidebar">
+            <div class="sidebar-header">Категории склада</div>
+            <div class="tree-container" id="categoryTree">
+                </div>
+        </div>
+
+        <div class="main-area">
+            <div class="toolbar">
+                <input type="text" class="search-input" id="searchInput" placeholder="🔍 Поиск по названию, бренду или артикулу..." oninput="debounceSearch()">
+            </div>
+            
+            <div class="table-wrapper">
+                <table id="products-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 15%">Бренд</th>
+                            <th style="width: 40%">Наименование</th>
+                            <th style="width: 15%">Цена</th>
+                            <th style="width: 15%">Остаток</th>
+                            <th style="width: 15%">Действие</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+                <div id="empty-state" style="display:none; text-align:center; padding: 50px; color: #444;">Нет товаров в этой категории</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000';
+        let allCategories = [];
+        let currentCatId = null;
+
+        // 1. Инициализация
+        async function init() {
+            try {
+                // Грузим категории один раз
+                const res = await fetch(`${API_URL}/categories`);
+                allCategories = await res.json();
+                renderTree(null, document.getElementById('categoryTree'));
+                
+                // Грузим все товары для старта
+                loadProducts(null);
+            } catch (err) { console.error(err); }
+        }
+
+        // 2. Строим дерево (Рекурсия)
+        function renderTree(parentId, container) {
+            const children = allCategories.filter(c => c.parent_id === parentId);
+            
+            // Если это корень, добавим кнопку "ВСЕ ТОВАРЫ"
+            if (parentId === null) {
+                const allDiv = document.createElement('div');
+                allDiv.className = 'cat-item active'; // По умолчанию активна
+                allDiv.innerHTML = `<span>📂 Все товары</span>`;
+                allDiv.onclick = (e) => selectCategory(null, e.currentTarget);
+                container.appendChild(allDiv);
+            }
+
+            if (children.length === 0) return;
+
+            children.forEach(cat => {
+                const div = document.createElement('div');
+                const hasSub = allCategories.some(c => c.parent_id === cat.id);
+                const icon = hasSub ? '📁' : '🔹';
+
+                div.innerHTML = `
+                    <div class="cat-item" onclick="selectCategory(${cat.id}, this)">
+                        <span>${icon} ${cat.name}</span>
+                    </div>
+                    <div class="sub-cat" id="cat-${cat.id}"></div>
+                `;
+                container.appendChild(div);
+                
+                // Строим вложенные папки
+                renderTree(cat.id, div.querySelector(`#cat-${cat.id}`));
+            });
+        }
+
+        // 3. Клик по категории
+        function selectCategory(id, el) {
+            // Убираем подсветку со всех
+            document.querySelectorAll('.cat-item').forEach(e => e.classList.remove('active'));
+            // Ставим новую
+            el.classList.add('active');
+            
+            currentCatId = id;
+            document.getElementById('searchInput').value = ''; // Сброс поиска
+            loadProducts(id);
+        }
+
+        // 4. Загрузка таблицы товаров
+        async function loadProducts(catId = null, query = '') {
+            let url = `${API_URL}/products?`;
+            if (catId) url += `category_id=${catId}&`;
+            if (query) url += `search=${query}`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                renderTable(data);
+            } catch (err) { console.error(err); }
+        }
+
+        // 5. Отрисовка таблицы
+        function renderTable(products) {
+            const tbody = document.querySelector('#products-table tbody');
+            const emptyState = document.getElementById('empty-state');
+            tbody.innerHTML = '';
+
+            if (products.length === 0) {
+                emptyState.style.display = 'block';
+                return;
+            } else {
+                emptyState.style.display = 'none';
+            }
+
+            products.forEach(p => {
+                // Определяем цвет остатка
+                const stockClass = p.stock < 5 ? 'stock-low' : 'stock-ok';
+                const stockText = p.stock > 0 ? `${p.stock} шт.` : 'Нет в наличии';
+
+                const row = `
+                    <tr>
+                        <td style="color:#888;">${p.brand}</td>
+                        <td style="font-weight:500;">${p.name}</td>
+                        <td class="price">${p.price} ₽</td>
+                        <td><span class="stock-tag ${stockClass}">${stockText}</span></td>
+                        <td>
+                            <button class="sell-btn" 
+                                    ${p.stock <= 0 ? 'disabled' : ''} 
+                                    onclick="sellItem(${p.id})">
+                                Продать (-1)
+                            </button>
+                        </td>
+                    </tr>`;
+                tbody.innerHTML += row;
+            });
+        }
+
+        // 6. Поиск с задержкой
+        let timeout = null;
+        function debounceSearch() {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                const val = document.getElementById('searchInput').value;
+                if(val.length > 0) {
+                    // При поиске сбрасываем выделение папки, ищем везде
+                    document.querySelectorAll('.cat-item').forEach(e => e.classList.remove('active'));
+                    currentCatId = null;
+                }
+                loadProducts(currentCatId, val);
+            }, 300);
+        }
+
+        // 7. Продажа
+        async function sellItem(id) {
+            await fetch(`${API_URL}/products/${id}/sell`, { method: 'PUT' });
+            // Перезагружаем текущий вид (чтобы не сбросить фильтр)
+            const searchVal = document.getElementById('searchInput').value;
+            loadProducts(currentCatId, searchVal);
+        }
+
+        init();
+    </script>
+</body>
+</html>

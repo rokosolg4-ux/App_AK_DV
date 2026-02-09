@@ -3,233 +3,187 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>АВТОКРАСКИ ДВ PRO | Dashboard</title>
+    <title>AK OS PRO | Плиточный интерфейс</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
+        /* ПЕРЕМЕННЫЕ ТЕМ (Светлая по умолчанию) */
         :root {
-            --bg: #f8f9fa;
-            --white: #ffffff;
-            --accent: #00c691; 
-            --blue: #4169e1;
-            --text: #333;
+            --bg: #f2f2f7;
+            --card-bg: #ffffff;
+            --text: #1c2e4a;
+            --gray: #95a5a6;
+            --accent: #14d2a0;
+            --shadow: rgba(0,0,0,0.05);
+        }
+
+        /* ТЕМНАЯ ТЕМА */
+        [data-theme="dark"] {
+            --bg: #121212;
+            --card-bg: #1e1e1e;
+            --text: #e0e0e0;
             --gray: #888;
-            --danger: #ff5f5f;
+            --accent: #00d4ff;
+            --shadow: rgba(0,0,0,0.3);
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: -apple-system, system-ui, sans-serif;
             background-color: var(--bg);
-            margin: 0;
             color: var(--text);
+            margin: 0;
             display: flex;
             justify-content: center;
+            transition: 0.3s;
         }
 
-        .app-container {
-            width: 100%;
-            max-width: 480px; 
-            min-height: 100vh;
-            padding: 20px;
-            box-sizing: border-box;
-        }
+        .container { width: 100%; max-width: 480px; padding: 20px; }
 
         /* ШАПКА */
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 0;
             margin-bottom: 20px;
         }
-        .brand { font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
-        .brand span { color: var(--gray); font-weight: 400; }
-
-        /* ПОИСК */
-        .search-bar {
-            background: var(--white);
-            padding: 15px;
-            border-radius: 18px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            color: var(--gray);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.04);
-            margin-bottom: 25px;
-            font-size: 14px;
+        .brand { font-size: 22px; font-weight: 900; }
+        .theme-toggle {
+            background: var(--card-bg);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 4px 10px var(--shadow);
+            color: var(--text);
         }
 
-        /* ПОКАЗАТЕЛИ (ЖИВЫЕ ДАННЫЕ) */
-        .stats-row {
-            display: flex;
-            justify-content: space-around;
-            text-align: center;
-            margin-bottom: 25px;
-        }
-        .stat-item h2 { margin: 0; color: var(--accent); font-size: 26px; letter-spacing: -1px; }
-        .stat-item.blue h2 { color: var(--blue); }
-        .stat-item p { margin: 5px 0; font-size: 11px; color: var(--gray); text-transform: uppercase; font-weight: 600; }
-
-        .tasks-count {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .tasks-count h1 { font-size: 56px; color: var(--danger); margin: 0; font-weight: 800; }
-        .tasks-count p { color: var(--gray); font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: 1px; }
-
-        /* КАРТОЧКИ МОДУЛЕЙ */
-        .card {
-            background: var(--white);
-            border-radius: 28px;
-            padding: 25px;
-            margin-bottom: 20px;
-            box-shadow: 0 10px 35px rgba(0,0,0,0.03);
-            border: 1px solid rgba(0,0,0,0.02);
-        }
-
-        .card-header {
-            display: flex;
-            align-items: center;
+        /* СТАТИСТИКА (ПЛИТКИ) */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 15px;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
-        .icon-circle {
-            width: 48px;
-            height: 48px;
-            background: #fcfcfc;
-            border: 1px solid #f0f0f0;
-            border-radius: 16px;
+        .tile-mini {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 8px 20px var(--shadow);
+        }
+        .tile-mini h2 { margin: 0; font-size: 24px; color: var(--accent); }
+        .tile-mini p { margin: 5px 0 0; font-size: 11px; color: var(--gray); text-transform: uppercase; font-weight: bold; }
+
+        /* ОСНОВНЫЕ ПЛИТКИ (КАРТОЧКИ) */
+        .card-tile {
+            background: var(--card-bg);
+            border-radius: 25px;
+            padding: 25px;
+            margin-bottom: 15px;
+            box-shadow: 0 10px 30px var(--shadow);
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            transition: transform 0.2s;
+        }
+        .card-tile:active { transform: scale(0.98); }
+
+        .card-head { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
+        .icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 15px;
+            background: rgba(149, 165, 166, 0.1);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
-            color: #555;
+            font-size: 20px;
+            color: var(--gray);
         }
-
-        .card-title h3 { margin: 0; font-size: 19px; font-weight: 700; }
-        .card-title p { margin: 2px 0 0; font-size: 13px; color: var(--gray); }
 
         .menu-list { list-style: none; padding: 0; margin: 0; }
-        .menu-link {
+        .menu-item {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            padding: 14px 0;
-            color: var(--text);
-            text-decoration: none;
-            border-bottom: 1px solid #f8f8f8;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
             font-size: 15px;
-            font-weight: 500;
-            transition: 0.2s;
         }
-        .menu-link:hover { padding-left: 5px; color: var(--blue); }
-        .menu-link:last-child { border: none; }
-        .menu-link i { color: #ddd; font-size: 12px; }
-
-        .loading-pulse { opacity: 0.5; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+        .menu-item:last-child { border: none; }
     </style>
 </head>
-<body>
+<body data-theme="light">
 
-    <div class="app-container">
+    <div class="container">
         <div class="header">
             <div class="brand">АВТОКРАСКИ ДВ <span>PRO</span></div>
-            <div class="icon-circle" style="width:38px; height:38px; border-radius:50%; background:#eee; border:none;">
-                <i class="fa-solid fa-user" style="font-size:14px; color:#aaa;"></i>
+            <button class="theme-toggle" onclick="toggleTheme()">
+                <i class="fa-solid fa-gear"></i>
+            </button>
+        </div>
+
+        <div class="stats-grid">
+            <div class="tile-mini">
+                <h2 id="revenue">145 200</h2>
+                <p>Выручка ₽</p>
+            </div>
+            <div class="tile-mini">
+                <h2 style="color: #4285f4;" id="sku-count">...</h2>
+                <p>Товаров (SKU)</p>
             </div>
         </div>
 
-        <div class="search-bar">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <span>Поиск товаров или счетов...</span>
-        </div>
-
-        <div class="stats-row">
-            <div class="stat-item">
-                <h2 id="live-sku" class="loading-pulse">...</h2>
-                <p>SKU в базе</p>
+        <div class="card-tile">
+            <div class="card-head">
+                <div class="icon"><i class="fa-solid fa-cash-register"></i></div>
+                <div>
+                    <h3 style="margin:0">Продажи</h3>
+                    <p style="margin:0; font-size:12px; color:var(--gray)">Клиенты и касса</p>
+                </div>
             </div>
-            <div class="stat-item blue">
-                <h2 id="live-qty" class="loading-pulse">...</h2>
-                <p>Всего ед.</p>
+            <div class="menu-list">
+                <div class="menu-item">РМК (Касса) <i class="fa-solid fa-chevron-right" style="font-size:10px; color:#ccc"></i></div>
+                <div class="menu-item">Клиенты (CRM) <i class="fa-solid fa-chevron-right" style="font-size:10px; color:#ccc"></i></div>
             </div>
         </div>
 
-        <div class="tasks-count">
-            <h1 id="live-tasks">5</h1>
+        <a href="nomenclature.html" class="card-tile">
+            <div class="card-head">
+                <div class="icon" style="color: var(--accent);"><i class="fa-solid fa-box-open"></i></div>
+                <div>
+                    <h3 style="margin:0">Склад</h3>
+                    <p style="margin:0; font-size:12px; color:var(--gray)">Управление запасами</p>
+                </div>
+            </div>
+            <div class="menu-list">
+                <div class="menu-item"><b>📦 Номенклатура</b> <i class="fa-solid fa-chevron-right"></i></div>
+                <div class="menu-item">📊 Текущие остатки <i class="fa-solid fa-chevron-right"></i></div>
+            </div>
+        </a>
+
+        <div class="tile-mini" style="width: 100%; box-sizing: border-box; margin-top: 10px;">
+            <h1 style="font-size: 50px; color: #ff5252; margin:0">5</h1>
             <p>Задачи на сегодня</p>
         </div>
-
-        <div class="card">
-            <div class="card-header">
-                <div class="icon-circle"><i class="fa-solid fa-cash-register"></i></div>
-                <div class="card-title">
-                    <h3>Продажи</h3>
-                    <p>Клиенты и касса</p>
-                </div>
-            </div>
-            <div class="menu-list">
-                <a href="#" class="menu-link"><span>📊 Отчеты продаж (AI)</span> <i class="fa-solid fa-chevron-right"></i></a>
-                <a href="#" class="menu-link"><span>🛒 РМК (Касса)</span> <i class="fa-solid fa-chevron-right"></i></a>
-                <a href="#" class="menu-link"><span>👥 Клиенты (CRM)</span> <i class="fa-solid fa-chevron-right"></i></a>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-header">
-                <div class="icon-circle"><i class="fa-solid fa-warehouse"></i></div>
-                <div class="card-title">
-                    <h3>Складской учет</h3>
-                    <p>Товары и логистика</p>
-                </div>
-            </div>
-            <div class="menu-list">
-                <a href="nomenclature.html" class="menu-link"><span>📦 Номенклатура</span> <i class="fa-solid fa-chevron-right"></i></a>
-                <a href="stock.html" class="menu-link"><span>📈 Текущие остатки</span> <i class="fa-solid fa-chevron-right"></i></a>
-                <a href="#" class="menu-link"><span>📥 Поступление</span> <i class="fa-solid fa-chevron-right"></i></a>
-            </div>
-        </div>
-
     </div>
 
     <script>
-        // ВОССТАНОВЛЕНИЕ ФУНКЦИОНАЛА: Запрос к серверу
-        const API_URL = 'http://193.124.9.12:3000/api/stock';
-
-        async function updateDashboard() {
-            try {
-                const response = await fetch(API_URL);
-                const data = await response.json();
-                
-                // 1. Обновляем количество уникальных товаров (SKU)
-                const skuCount = data.length;
-                const skuElement = document.getElementById('live-sku');
-                skuElement.innerText = skuCount;
-                skuElement.classList.remove('loading-pulse');
-
-                // 2. Считаем общее количество штук на складе
-                let totalQty = 0;
-                data.forEach(item => {
-                    totalQty += parseFloat(item.qty || 0);
-                });
-                
-                const qtyElement = document.getElementById('live-qty');
-                qtyElement.innerText = Math.round(totalQty);
-                qtyElement.classList.remove('loading-pulse');
-
-                console.log("Данные успешно обновлены из БД Postgres");
-            } catch (error) {
-                console.error("Ошибка обновления данных:", error);
-                document.getElementById('live-sku').innerText = "Err";
-                document.getElementById('live-qty').innerText = "Err";
-            }
+        // СМЕНА ТЕМЫ
+        function toggleTheme() {
+            const body = document.body;
+            const current = body.getAttribute('data-theme');
+            body.setAttribute('data-theme', current === 'light' ? 'dark' : 'light');
         }
 
-        // Запуск при загрузке
-        updateDashboard();
-        
-        // Автообновление каждые 30 секунд
-        setInterval(updateDashboard, 30000);
+        // ЗАГРУЗКА ДАННЫХ
+        async function loadData() {
+            try {
+                const res = await fetch('http://193.124.9.12:3000/api/stock');
+                const data = await res.json();
+                document.getElementById('sku-count').innerText = data.length;
+            } catch (e) { console.error(e); }
+        }
+        loadData();
     </script>
 </body>
 </html>

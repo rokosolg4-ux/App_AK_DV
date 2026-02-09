@@ -7,7 +7,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
-        /* (Стили оставляем те же, они были отличные) */
         :root { --bg: #f4f7fe; --white: #ffffff; --primary: #4318ff; --text: #2b3674; --border: #e0e5f2; }
         body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; display: flex; height: 100vh; overflow: hidden; color: var(--text); }
         
@@ -20,9 +19,19 @@
         .grid-header { display: flex; justify-content: space-between; margin-bottom: 20px; }
         .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; overflow-y: auto; padding-right: 5px; }
         
-        .card { background: var(--white); padding: 15px; border-radius: 15px; cursor: pointer; transition: 0.2s; border: 1px solid transparent; }
+        /* КАРТОЧКА В СПИСКЕ */
+        .card { background: var(--white); border-radius: 15px; cursor: pointer; transition: 0.2s; border: 1px solid transparent; overflow: hidden; display: flex; flex-direction: column; }
         .card:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); border-color: var(--primary); }
         
+        .card-img-container { height: 140px; background: #f9f9f9; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .card-img { width: 100%; height: 100%; object-fit: contain; } /* Картинка вписывается красиво */
+        .card-placeholder { font-size: 40px; color: #e0e5f2; }
+
+        .card-body { padding: 15px; }
+        .card-code { font-size: 11px; color: #a3aed0; }
+        .card-name { font-weight: 600; margin: 5px 0; font-size: 13px; line-height: 1.4; height: 36px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+        .card-price { color: var(--primary); font-weight: 700; font-size: 16px; margin-top: 5px; }
+
         /* МОДАЛКА */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 100; backdrop-filter: blur(2px); }
         .modal-window { 
@@ -48,12 +57,18 @@
         .group-box { border: 1px solid #eee; border-radius: 5px; padding: 15px 10px 10px; margin-top: 20px; position: relative; }
         .group-title { position: absolute; top: -10px; left: 10px; background: #fff; padding: 0 5px; font-size: 11px; color: var(--primary); font-weight: 700; text-transform: uppercase; }
         
-        /* Таблица складов */
         .stock-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
         .stock-table th { background: #f5f5f5; border: 1px solid #ddd; padding: 6px; text-align: left; }
         .stock-table td { border: 1px solid #ddd; padding: 6px; }
         .inp-cell { width: 100%; border: none; background: transparent; text-align: center; }
-        .inp-cell:focus { background: #fff9c4; outline: none; }
+
+        /* ПРЕВЬЮ КАРТИНКИ */
+        .image-preview-box {
+            width: 200px; height: 200px; border: 1px solid #ddd; background: #f9f9f9; 
+            margin-left: 175px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center;
+        }
+        .image-preview-box img { max-width: 100%; max-height: 100%; display: none; }
+        .image-preview-box i { font-size: 40px; color: #ddd; }
     </style>
 </head>
 <body>
@@ -76,21 +91,21 @@
                 <span style="font-weight:700" id="win-title">Товар</span>
                 <button class="btn" style="border:none; background:none; font-size:16px;" onclick="closeModal()">✕</button>
             </div>
-            
             <div class="m-toolbar">
                 <button class="btn btn-yellow" onclick="saveProduct(true)">Записать и закрыть</button>
                 <button class="btn" onclick="saveProduct(false)"><i class="fa fa-floppy-o"></i> Записать</button>
             </div>
-
             <div class="tabs">
                 <div class="tab active" onclick="setTab('main', this)">Главное</div>
-                <div class="tab" onclick="setTab('desc', this)">Описание</div>
+                <div class="tab" onclick="setTab('desc', this)">Описание и Фото</div>
                 <div class="tab" onclick="setTab('stock', this)">Склад и Учет</div>
                 <div class="tab" onclick="setTab('paint', this)">Доработки 555</div>
             </div>
 
             <div class="m-body">
-                <input type="hidden" id="f-id"> <div id="tab-main" class="tab-content active">
+                <input type="hidden" id="f-id">
+
+                <div id="tab-main" class="tab-content active">
                     <div class="row">
                         <label class="lbl">Рабочее наименование:</label>
                         <input type="text" class="inp" id="f-name">
@@ -105,7 +120,6 @@
                         <label class="lbl" style="width:60px;">Код 1С:</label>
                         <input type="text" class="inp inp-short" id="f-code">
                     </div>
-
                     <div class="group-box">
                         <span class="group-title">Основные параметры</span>
                         <div class="row">
@@ -117,7 +131,6 @@
                             <input type="number" class="inp inp-short" id="f-vat">
                         </div>
                     </div>
-
                     <div class="group-box">
                         <span class="group-title">Логистика</span>
                         <div class="row">
@@ -133,7 +146,6 @@
                             <input type="number" class="inp inp-short" id="f-vol" step="0.001">
                         </div>
                     </div>
-                    
                     <div class="group-box">
                         <span class="group-title">Производитель</span>
                         <div class="row">
@@ -148,8 +160,17 @@
                 </div>
 
                 <div id="tab-desc" class="tab-content">
+                    <div class="row">
+                        <label class="lbl">Ссылка на фото:</label>
+                        <input type="text" class="inp" id="f-image" placeholder="https://..." oninput="updatePreview()">
+                    </div>
+                    <div class="image-preview-box">
+                        <i id="preview-icon" class="fa fa-image"></i>
+                        <img id="preview-img" src="" alt="Preview">
+                    </div>
+
                     <label style="font-size:12px; color:#666;">Описание для сайта:</label>
-                    <textarea id="f-desc" class="inp" style="width:100%; height:200px; margin-top:5px; resize:vertical;"></textarea>
+                    <textarea id="f-desc" class="inp" style="width:100%; height:150px; margin-top:5px; resize:vertical;"></textarea>
                     
                     <div style="margin-top:20px; display:flex; flex-direction:column; gap:8px;">
                         <label><input type="checkbox" id="chk-price"> Не включать в прайс-лист</label>
@@ -169,8 +190,7 @@
                                 <th>Ед.</th>
                             </tr>
                         </thead>
-                        <tbody id="tbl-stocks">
-                            </tbody>
+                        <tbody id="tbl-stocks"></tbody>
                     </table>
                 </div>
 
@@ -195,7 +215,6 @@
                         <label><input type="checkbox" id="chk-can"> Баночка для краски</label>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
@@ -203,7 +222,6 @@
     <script>
         const API = 'http://193.124.9.12:3000/api';
 
-        // 1. СТАРТ
         async function init() {
             const cats = await (await fetch(API + '/categories')).json();
             let html = `<div class="folder active" onclick="loadStock(null, this)"><i class="fa fa-folder-open"></i> Все товары</div>`;
@@ -214,7 +232,6 @@
             loadStock();
         }
 
-        // 2. ЗАГРУЗКА СПИСКА
         async function loadStock(catId, el) {
             if(el) {
                 document.querySelectorAll('.folder').forEach(f => f.classList.remove('active'));
@@ -223,31 +240,36 @@
             const url = catId ? `${API}/stock?category=${catId}` : `${API}/stock`;
             const products = await (await fetch(url)).json();
             
+            // ОТРИСОВКА КАРТОЧКИ С КАРТИНКОЙ
             document.getElementById('grid-container').innerHTML = products.map(p => `
                 <div class="card" onclick="openCard(${p.id})">
-                    <div style="font-size:11px; color:#aaa">${p.vendor_code || '---'}</div>
-                    <div style="font-weight:600; margin:5px 0;">${p.product_name}</div>
-                    <div style="color:${p.qty>0?'green':'red'}">${p.qty} шт</div>
+                    <div class="card-img-container">
+                        ${p.image_url 
+                            ? `<img src="${p.image_url}" class="card-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'"> <i class="fa fa-image card-placeholder" style="display:none"></i>` 
+                            : `<i class="fa fa-image card-placeholder"></i>`}
+                    </div>
+                    <div class="card-body">
+                        <div style="font-size:11px; color:#aaa">${p.vendor_code || '---'}</div>
+                        <div class="card-name">${p.product_name}</div>
+                        <div class="card-price">${p.price} ₽</div>
+                        <div style="font-size:11px; color:${p.qty>0?'green':'red'}; margin-top:5px;">Ост: ${p.qty}</div>
+                    </div>
                 </div>
             `).join('');
         }
 
-        // 3. ОТКРЫТИЕ КАРТОЧКИ
         async function openCard(id) {
             document.getElementById('modal').style.display = 'block';
-            
             const p = await (await fetch(`${API}/product/${id}`)).json();
             
-            // Заполняем ID
             document.getElementById('f-id').value = p.id;
-
-            // Заполняем поля (Главное)
             document.getElementById('win-title').innerText = p.working_name || p.name;
+            
+            // Заполнение полей
             document.getElementById('f-name').value = p.working_name || p.name;
             document.getElementById('f-print-name').value = p.print_name || p.name;
             document.getElementById('f-sku').value = p.vendor_code || '';
             document.getElementById('f-code').value = p.internal_code || '';
-            
             document.getElementById('f-type').value = p.product_type || 'Товар';
             document.getElementById('f-vat').value = p.vat_rate || 20;
             document.getElementById('f-unit').value = p.unit_storage || 'шт';
@@ -256,21 +278,21 @@
             document.getElementById('f-vol').value = p.volume || 0;
             document.getElementById('f-brand').value = p.brand || '';
             document.getElementById('f-country').value = p.country || '';
-
-            // Описание и чеки
+            
+            // Вкладка Описание и Фото
             document.getElementById('f-desc').value = p.description || '';
+            document.getElementById('f-image').value = p.image_url || '';
+            updatePreview(); // Показать картинку
+            
             document.getElementById('chk-price').checked = p.not_in_pricelist;
             document.getElementById('chk-gift').checked = p.is_gift;
             document.getElementById('chk-archive').checked = p.is_archive;
-
-            // Краска
             document.getElementById('f-thinner').value = p.coef_thinner || 0;
             document.getElementById('f-hardener').value = p.coef_hardener || 0;
             document.getElementById('f-matte').value = p.matte_additive || 0;
             document.getElementById('chk-stand').checked = p.is_standard_paint;
             document.getElementById('chk-can').checked = p.is_paint_can;
 
-            // Таблица Складов (Генерируем строки)
             const tbl = document.getElementById('tbl-stocks');
             if(p.stocks && p.stocks.length > 0) {
                 tbl.innerHTML = p.stocks.map(s => `
@@ -284,15 +306,26 @@
             } else {
                 tbl.innerHTML = '<tr><td colspan="4">Склады не найдены</td></tr>';
             }
-
             setTab('main', document.querySelector('.tab'));
         }
 
-        // 4. СОХРАНЕНИЕ (ЛОГИКА 1С)
+        function updatePreview() {
+            const url = document.getElementById('f-image').value;
+            const img = document.getElementById('preview-img');
+            const icon = document.getElementById('preview-icon');
+            
+            if (url) {
+                img.src = url;
+                img.style.display = 'block';
+                icon.style.display = 'none';
+            } else {
+                img.style.display = 'none';
+                icon.style.display = 'block';
+            }
+        }
+
         async function saveProduct(closeAfter) {
             const id = document.getElementById('f-id').value;
-            
-            // Собираем данные складов из таблицы
             const stocks = [];
             document.querySelectorAll('.stock-row').forEach(row => {
                 stocks.push({
@@ -302,13 +335,11 @@
                 });
             });
 
-            // Собираем большой объект
             const data = {
                 working_name: document.getElementById('f-name').value,
                 print_name: document.getElementById('f-print-name').value,
                 vendor_code: document.getElementById('f-sku').value,
                 internal_code: document.getElementById('f-code').value,
-                
                 product_type: document.getElementById('f-type').value,
                 vat_rate: document.getElementById('f-vat').value,
                 unit_storage: document.getElementById('f-unit').value,
@@ -317,44 +348,34 @@
                 volume: document.getElementById('f-vol').value,
                 brand: document.getElementById('f-brand').value,
                 country: document.getElementById('f-country').value,
-                
                 description: document.getElementById('f-desc').value,
+                image_url: document.getElementById('f-image').value, // Сохраняем картинку
                 not_in_pricelist: document.getElementById('chk-price').checked,
                 is_gift: document.getElementById('chk-gift').checked,
                 is_archive: document.getElementById('chk-archive').checked,
-                
                 coef_thinner: document.getElementById('f-thinner').value,
                 coef_hardener: document.getElementById('f-hardener').value,
                 matte_additive: document.getElementById('f-matte').value,
                 is_standard_paint: document.getElementById('chk-stand').checked,
                 is_paint_can: document.getElementById('chk-can').checked,
-                
-                stocks: stocks // Отправляем массив складов
+                stocks: stocks
             };
 
-            // Отправляем на сервер
             try {
                 const res = await fetch(`${API}/product/${id}`, {
                     method: 'PUT',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify(data)
                 });
-
                 if (res.ok) {
-                    alert('Товар успешно записан!');
+                    alert('Товар записан!');
                     if (closeAfter) closeModal();
-                    loadStock(); // Обновляем список, вдруг имя поменялось
-                } else {
-                    alert('Ошибка при сохранении');
-                }
-            } catch (e) {
-                console.error(e);
-                alert('Нет связи с сервером');
-            }
+                    loadStock();
+                } else { alert('Ошибка сохранения'); }
+            } catch (e) { alert('Сбой сети'); }
         }
 
         function closeModal() { document.getElementById('modal').style.display = 'none'; }
-        
         function setTab(name, el) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             el.classList.add('active');

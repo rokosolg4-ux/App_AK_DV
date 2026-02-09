@@ -2,77 +2,290 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Номенклатура PRO | АВТОКРАСКИ ДВ</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Номенклатура | AK OS PRO</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
     <style>
-        :root { --bg: #f2f2f7; --accent: #14d2a0; --text: #1c2e4a; }
-        body { font-family: sans-serif; background: var(--bg); margin: 0; display: flex; height: 100vh; }
-        
-        /* Боковая панель (Папки) */
-        .sidebar { width: 280px; background: #fff; border-right: 1px solid #ddd; padding: 20px; overflow-y: auto; }
-        .category-item { padding: 10px; cursor: pointer; border-radius: 8px; margin-bottom: 5px; transition: 0.2s; }
-        .category-item:hover { background: #f0f0f5; }
-        .category-item i { margin-right: 10px; color: #95a5a6; }
+        :root {
+            --bg-body: #f4f7fe;
+            --bg-card: #ffffff;
+            --primary: #4318ff; /* Технологичный синий */
+            --accent: #05cd99;  /* Свежий мятный */
+            --text-dark: #2b3674;
+            --text-gray: #a3aed0;
+            --border-radius: 20px;
+        }
 
-        /* Основная зона (Товары) */
-        .main-content { flex: 1; padding: 25px; overflow-y: auto; }
-        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* --- ВЕРХНЯЯ ПАНЕЛЬ (ВКЛАДКИ) --- */
+        .top-bar {
+            background: var(--bg-card);
+            height: 70px;
+            display: flex;
+            align-items: center;
+            padding: 0 30px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.02);
+            z-index: 10;
+        }
         
-        /* Карточка товара как в 1С/PRO */
-        .product-card { 
-            background: #fff; border-radius: 20px; padding: 20px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.03); position: relative;
+        .nav-tabs {
+            display: flex;
+            gap: 20px;
         }
-        .sku { font-size: 10px; color: #95a5a6; text-transform: uppercase; }
-        .product-name { font-weight: 700; margin: 10px 0; font-size: 15px; color: var(--text); }
-        .price-tag { color: var(--accent); font-size: 18px; font-weight: 800; }
-        .stock-badge { 
-            position: absolute; top: 15px; right: 15px; 
-            background: #eefcf8; color: var(--accent); 
-            padding: 4px 10px; border-radius: 10px; font-size: 12px; font-weight: 600;
+
+        .tab-btn {
+            text-decoration: none;
+            color: var(--text-gray);
+            font-weight: 600;
+            padding: 10px 20px;
+            border-radius: 12px;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
+
+        .tab-btn:hover, .tab-btn.active {
+            background: rgba(67, 24, 255, 0.05);
+            color: var(--primary);
+        }
+
+        /* --- ОСНОВНАЯ РАБОЧАЯ ОБЛАСТЬ --- */
+        .workspace {
+            display: flex;
+            flex: 1;
+            padding: 20px;
+            gap: 20px;
+            overflow: hidden;
+        }
+
+        /* --- ЛЕВОЕ МЕНЮ (ПАПКИ) --- */
+        .sidebar {
+            width: 300px;
+            background: var(--bg-card);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+        }
+
+        .folder-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            border-radius: 12px;
+            cursor: pointer;
+            color: var(--text-dark);
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .folder-item i { margin-right: 12px; color: var(--text-gray); }
+        
+        .folder-item:hover { background: #f4f7fe; }
+        
+        /* Активная папка */
+        .folder-item.active {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 5px 15px rgba(67, 24, 255, 0.3);
+        }
+        .folder-item.active i { color: #fff; }
+
+        /* --- ПРАВАЯ ЧАСТЬ (ТОВАРЫ) --- */
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 20px;
+        }
+
+        .product-card {
+            background: var(--bg-card);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 1px solid transparent;
+            cursor: pointer;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border-color: rgba(67, 24, 255, 0.1);
+        }
+
+        .sku-badge {
+            font-size: 11px;
+            background: #f4f7fe;
+            color: var(--text-gray);
+            padding: 4px 8px;
+            border-radius: 6px;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .p-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: auto;
+        }
+
+        .price {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .stock {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--accent);
+            background: rgba(5, 205, 153, 0.1);
+            padding: 5px 10px;
+            border-radius: 8px;
+        }
+        
+        /* Лоадер */
+        .loading { text-align: center; color: var(--text-gray); margin-top: 50px; }
     </style>
 </head>
 <body>
-    <div class="sidebar" id="categories-tree">
-        <h3><i class="fa-solid fa-folder-tree"></i> Категории</h3>
+
+    <div class="top-bar">
+        <div class="nav-tabs">
+            <a href="index.html" class="tab-btn">
+                <i class="fa-solid fa-house"></i> Главная
+            </a>
+            <a href="#" class="tab-btn active">
+                <i class="fa-solid fa-boxes-stacked"></i> Номенклатура
+            </a>
+            <a href="#" class="tab-btn">
+                <i class="fa-solid fa-chart-pie"></i> Отчеты
+            </a>
         </div>
-    <div class="main-content">
-        <div class="product-grid" id="products-list">
+    </div>
+
+    <div class="workspace">
+        
+        <div class="sidebar" id="sidebar-list">
+            <div class="folder-item active" onclick="filterProducts(null, this)">
+                <i class="fa-solid fa-layer-group"></i> Все товары
             </div>
+            </div>
+
+        <div class="content-area">
+            <h2 id="current-category-title" style="color: var(--text-dark); margin-top: 0;">Все товары</h2>
+            <div class="products-grid" id="products-container">
+                <div class="loading"><i class="fa-solid fa-spinner fa-spin"></i> Загрузка склада...</div>
+            </div>
+        </div>
+
     </div>
 
     <script>
-        const API = 'http://193.124.9.12:3000/api';
+        const API_URL = 'http://193.124.9.12:3000/api';
 
-        async function init() {
-            // Грузим категории
-            const catRes = await fetch(`${API}/categories`);
-            const categories = await catRes.json();
-            document.getElementById('categories-tree').innerHTML += categories.map(c => `
-                <div class="category-item" onclick="loadProducts(${c.id})">
-                    <i class="fa-solid fa-folder"></i> ${c.name}
-                </div>
-            `).join('');
-
-            loadProducts(); // Грузим всё при старте
+        // 1. Загрузка папок (Категорий)
+        async function loadCategories() {
+            try {
+                const res = await fetch(`${API_URL}/categories`);
+                const categories = await res.json();
+                
+                const sidebar = document.getElementById('sidebar-list');
+                
+                // Добавляем папки из базы
+                categories.forEach(cat => {
+                    const div = document.createElement('div');
+                    div.className = 'folder-item';
+                    div.innerHTML = `<i class="fa-solid fa-folder"></i> ${cat.name}`;
+                    div.onclick = function() { filterProducts(cat.id, this, cat.name); };
+                    sidebar.appendChild(div);
+                });
+            } catch (err) {
+                console.error('Ошибка категорий:', err);
+            }
         }
 
-        async function loadProducts(catId = null) {
-            const url = catId ? `${API}/stock?category=${catId}` : `${API}/stock`;
-            const res = await fetch(url);
-            const data = await res.json();
+        // 2. Загрузка и фильтрация товаров
+        async function filterProducts(categoryId, element, categoryName) {
+            // Визуальное выделение активной папки
+            document.querySelectorAll('.folder-item').forEach(el => el.classList.remove('active'));
+            if(element) element.classList.add('active');
+
+            // Обновление заголовка
+            document.getElementById('current-category-title').innerText = categoryName || 'Все товары';
             
-            document.getElementById('products-list').innerHTML = data.map(p => `
-                <div class="product-card">
-                    <div class="sku">${p.sku || 'Нет артикула'}</div>
-                    <div class="stock-badge">${Math.round(p.qty)} шт.</div>
-                    <div class="product-name">${p.product_name}</div>
-                    <div class="price-tag">${p.price || 0} ₽</div>
-                </div>
-            `).join('');
+            const container = document.getElementById('products-container');
+            container.innerHTML = '<div class="loading"><i class="fa-solid fa-spinner fa-spin"></i> Загрузка...</div>';
+
+            try {
+                // Запрос к API: если есть ID категории, добавляем ?category=ID
+                let url = `${API_URL}/stock`;
+                if (categoryId) url += `?category=${categoryId}`;
+
+                const res = await fetch(url);
+                const products = await res.json();
+
+                container.innerHTML = ''; // Очистить лоадер
+
+                if (products.length === 0) {
+                    container.innerHTML = '<p style="color:#a3aed0">В этой папке пока пусто.</p>';
+                    return;
+                }
+
+                // Отрисовка карточек
+                products.forEach(p => {
+                    const card = document.createElement('div');
+                    card.className = 'product-card';
+                    card.innerHTML = `
+                        <div class="sku-badge">${p.sku || 'Без арт.'}</div>
+                        <div class="p-name">${p.name || p.product_name || 'Товар без названия'}</div>
+                        <div class="card-footer">
+                            <div class="price">${p.price || 0} ₽</div>
+                            <div class="stock">${Math.round(p.qty)} шт</div>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+
+            } catch (err) {
+                console.error('Ошибка товаров:', err);
+                container.innerHTML = 'Ошибка загрузки данных.';
+            }
         }
-        init();
+
+        // Запуск при старте
+        loadCategories();
+        filterProducts(null, document.querySelector('.folder-item')); // Грузим "Все товары" сразу
     </script>
 </body>
 </html>

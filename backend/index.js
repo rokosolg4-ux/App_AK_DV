@@ -6,30 +6,29 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Настройки подключения к базе
+// ПРАВИЛЬНЫЕ НАСТРОЙКИ (Как на твоем скриншоте)
 const pool = new Pool({
   user: 'user',
-  host: 'localhost',
+  host: 'database', // <--- БЫЛО localhost, СТАЛО database (Это самое важное!)
   database: 'avtokraski_db',
   password: 'password',
   port: 5432,
 });
 
-// 1. РОУТ КАТЕГОРИЙ (ПАПКИ)
+// 1. КАТЕГОРИИ
 app.get('/api/categories', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM categories ORDER BY id');
     res.json(result.rows);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Ошибка при загрузке категорий" });
+    res.status(500).json({ error: "Ошибка соединения с БД" });
   }
 });
 
-// 2. РОУТ ТОВАРОВ (СКЛАД + ФИЛЬТР)
+// 2. ТОВАРЫ
 app.get('/api/stock', async (req, res) => {
-  const { category } = req.query; 
-  
+  const { category } = req.query;
   try {
     let queryText = `
       SELECT 
@@ -46,23 +45,18 @@ app.get('/api/stock', async (req, res) => {
     `;
     
     const queryParams = [];
-    
-    // Если выбрали папку - фильтруем
     if (category) {
       queryText += ` WHERE p.category_id = $1`;
       queryParams.push(category);
     }
-    
-    queryText += ` ORDER BY p.name ASC`; 
+    queryText += ` ORDER BY p.name ASC`;
 
     const result = await pool.query(queryText, queryParams);
     res.json(result.rows);
-
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Ошибка при загрузке товаров" });
+    res.status(500).json({ error: "Ошибка соединения с БД" });
   }
 });
 
-// Запуск сервера
-app.listen(3000, () => console.log('SERVER IS ALIVE on port 3000'));
+app.listen(3000, () => console.log('SERVER CONNECTED TO DATABASE'));

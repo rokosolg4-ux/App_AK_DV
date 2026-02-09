@@ -2,89 +2,236 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>РМК АВТОКРАСКИ ДВ</title>
+    <title>РМК АВТОКРАСКИ ДВ | PRO SYSTEM</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root { --1c-blue: #2b4b77; --1c-bg: #f2f2f2; --1c-border: #c0c0c0; }
-        body { margin: 0; font-family: Arial, sans-serif; background: var(--1c-bg); display: flex; flex-direction: column; height: 100vh; }
-        header { background: #fff; padding: 10px 20px; border-bottom: 1px solid var(--1c-border); display: flex; gap: 20px; align-items: center; }
-        main { flex: 1; display: grid; grid-template-columns: 1fr 300px; padding: 10px; gap: 10px; overflow: hidden; }
-        .table-panel { background: #fff; border: 1px solid var(--1c-border); overflow-y: auto; }
-        .side-panel { display: flex; flex-direction: column; gap: 10px; }
-        .card { background: #fff; border: 1px solid var(--1c-border); padding: 15px; }
+        :root { --1c-bg: #f3f4f6; --1c-blue: #2b4b77; --accent: #2563eb; --border: #c0c0c0; }
+        body { margin: 0; font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--1c-bg); height: 100vh; display: grid; grid-template-rows: 60px 1fr 100px; }
+        
+        /* ВЕРХНЯЯ ПАНЕЛЬ */
+        header { background: #fff; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px; gap: 30px; font-size: 13px; }
+        .mode-badge { background: #10b981; color: #fff; padding: 4px 10px; border-radius: 4px; font-weight: bold; }
+        .return-mode-active { background: #ef4444 !important; }
+        select { padding: 5px; border: 1px solid var(--border); border-radius: 4px; }
+
+        /* ОСНОВНАЯ ТАБЛИЦА */
+        main { display: grid; grid-template-columns: 1fr 350px; overflow: hidden; }
+        .table-area { background: #fff; margin: 10px; border: 1px solid var(--border); display: flex; flex-direction: column; }
         table { width: 100%; border-collapse: collapse; }
-        th { background: #e0e0e0; padding: 8px; border: 1px solid var(--1c-border); text-align: left; font-size: 12px; }
-        td { padding: 8px; border: 1px solid var(--1c-border); font-size: 13px; }
-        .total-label { font-size: 24px; color: var(--1c-blue); font-weight: bold; text-align: right; }
-        footer { height: 60px; background: #fff; border-top: 1px solid var(--1c-border); display: flex; align-items: center; padding: 0 20px; }
-        input { padding: 10px; border: 1px solid var(--1c-border); width: 100%; font-size: 16px; }
-        .btn-1c { background: #fff; border: 1px solid var(--1c-border); padding: 8px 15px; cursor: pointer; }
-        .btn-1c:hover { background: #e0e0e0; }
+        th { background: #e9ecef; padding: 10px; text-align: left; border: 1px solid var(--border); font-size: 12px; }
+        td { padding: 10px; border: 1px solid var(--border); font-size: 13px; }
+
+        /* ПРАВАЯ ПАНЕЛЬ */
+        .sidebar { background: #fff; border-left: 1px solid var(--border); padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+        .bonus-panel { background: #f0fdf4; border: 1px solid #bbf7d0; padding: 15px; border-radius: 8px; }
+        .total-panel { margin-top: auto; padding: 20px 0; border-top: 2px solid var(--1c-blue); text-align: right; }
+        .total-price { font-size: 2.8rem; font-weight: 800; color: var(--1c-blue); }
+
+        /* ПОИСК И КНОПКИ */
+        .bottom-bar { background: #fff; border-top: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px; gap: 15px; }
+        .search-wrap { flex: 1; position: relative; }
+        #scan-input { width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 4px; font-size: 1.1rem; }
+        
+        .btn { padding: 12px 20px; border: 1px solid var(--border); border-radius: 4px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .btn-primary { background: var(--accent); color: #fff; border: none; }
+        .btn-pay { background: #fbbf24; color: #000; width: 100%; font-size: 1.4rem; border: none; }
+
+        /* MODAL CATALOG */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: #fff; width: 900px; height: 85vh; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; }
+        .search-results { position: absolute; bottom: 75px; left: 20px; right: 20px; background: #fff; border: 1px solid var(--border); box-shadow: 0 -5px 15px rgba(0,0,0,0.1); z-index: 50; display: none; max-height: 250px; overflow-y: auto; }
+        .res-row { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; }
+        .res-row:hover { background: #f3f4f6; }
     </style>
 </head>
 <body>
+
     <header>
-        <div>Тип: <b id="ui-type">ПРОДАЖА</b></div>
-        <div>Клиент: <b>Частное лицо</b></div>
-        <div style="margin-left:auto">Продавец: <b>Антонюк О. М.</b></div>
+        <div class="mode-badge" id="ui-mode">ПРОДАЖА</div>
+        <div>Организация: <b>ИП Антонюк О. М.</b></div>
+        <div>Склад: <b>Шевчука 22 А</b></div>
+        <div style="margin-left: auto;">
+            Продавец: 
+            <select id="sel-consultant" onchange="pos.setCtx()">
+                <option value="1">Антонюк О. М.</option>
+                <option value="2">Сидоров А. П.</option>
+            </select>
+        </div>
     </header>
 
     <main>
-        <div class="table-panel">
-            <table>
-                <thead><tr><th>Номенклатура</th><th>Кол-во</th><th>Цена</th><th>Сумма</th></tr></thead>
-                <tbody id="rows"></tbody>
-            </table>
-        </div>
-        <div class="side-panel">
-            <div class="card">
-                <div style="color: gray; font-size: 12px;">БОНУСЫ</div>
-                <div id="ui-bonus" style="font-size: 18px; font-weight: bold; color: green;">+ 0.00</div>
+        <div class="table-area">
+            <div style="flex:1; overflow-y:auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th width="50%">Номенклатура</th>
+                            <th>Кол-во</th>
+                            <th>Цена</th>
+                            <th>Сумма</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="cart-rows"></tbody>
+                </table>
             </div>
-            <div class="card" style="margin-top: auto;">
-                <div style="font-size: 14px;">ИТОГО К ОПЛАТЕ:</div>
-                <div class="total-label" id="ui-total">0.00 ₽</div>
-            </div>
-            <button class="btn-1c" style="background: #ffcc00; height: 50px; font-weight: bold;">ОПЛАТИТЬ</button>
         </div>
+
+        <aside class="sidebar">
+            <div>
+                Клиент:
+                <select id="sel-client" style="width: 100%; margin-top: 5px;" onchange="pos.setCtx()">
+                    <option value="1">Частное лицо</option>
+                </select>
+            </div>
+
+            <div class="bonus-panel">
+                <div style="font-size: 11px; color: #15803d; font-weight: bold;">БОНУСНЫЙ БАЛАНС</div>
+                <div style="display: flex; justify-content: space-between; margin-top: 5px;">
+                    <span>Доступно:</span> <b id="ui-bal">0.00</b>
+                </div>
+                <div id="ui-proj" style="margin-top: 5px; font-weight: bold;"></div>
+            </div>
+
+            <div class="total-panel">
+                <div style="font-size: 13px; color: gray;">ИТОГО К ОПЛАТЕ:</div>
+                <div class="total-price" id="ui-total">0.00 ₽</div>
+            </div>
+
+            <button class="btn btn-pay" onclick="pos.pay()">ОПЛАТИТЬ</button>
+        </aside>
     </main>
 
-    <footer>
-        <input type="text" id="scan" placeholder="Поиск товара (Enter)..." autofocus>
-    </footer>
+    <div class="bottom-bar">
+        <button class="btn btn-primary" onclick="pos.openCatalog()"><i class="fa fa-search"></i> ПОДБОР (F2)</button>
+        <div class="search-wrap">
+            <input type="text" id="scan-input" placeholder="Поиск по названию или штрихкоду (Enter)..." autocomplete="off">
+            <div id="search-dropdown" class="search-results"></div>
+        </div>
+        <button class="btn" id="btn-mode-toggle" onclick="pos.toggleMode()">ВЕРНУТЬ ТОВАР</button>
+    </div>
+
+    <div id="modal-cat" class="modal">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h2 style="margin:0;">Подбор номенклатуры</h2>
+                <button onclick="pos.closeCatalog()" style="border:none; background:none; font-size:24px; cursor:pointer;">&times;</button>
+            </div>
+            <input type="text" placeholder="Быстрый поиск в каталоге..." oninput="pos.searchCatalog(this.value)" style="margin-bottom:15px;">
+            <div style="flex:1; overflow-y:auto;">
+                <table style="width: 100%;">
+                    <thead><tr><th>Наименование</th><th>Артикул</th><th>Остаток</th><th>Цена</th><th></th></tr></thead>
+                    <tbody id="cat-rows"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
     <script>
-        const pos = {
-            apiUrl: '/api/pos', // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ ДЛЯ IP
-            receipt: null,
+        class POS {
+            constructor() {
+                this.apiUrl = '/api/pos'; // Исправлено для внешнего IP
+                this.receipt = null;
+                this.init();
+            }
+
+            async init() {
+                await this.call('/create', { type: 'sale' });
+                const input = document.getElementById('scan-input');
+                input.addEventListener('input', e => this.liveSearch(e.target.value));
+                input.addEventListener('keypress', e => { if(e.key === 'Enter') this.quickAdd(e.target.value); });
+            }
+
             async call(ep, body = {}) {
-                const res = await fetch(this.apiUrl + ep, { 
-                    method: 'POST', 
-                    headers: {'Content-Type': 'application/json'}, 
-                    body: JSON.stringify(body) 
+                const res = await fetch(this.apiUrl + ep, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
                 });
                 const data = await res.json();
-                if(data.id) { this.receipt = data; this.render(); }
-            },
-            async init() {
-                await this.call('/create', {type: 'sale'});
-                document.getElementById('scan').addEventListener('keypress', e => {
-                    if(e.key === 'Enter') this.addItem(e.target.value);
-                });
-            },
+                if (data.id) { this.receipt = data; this.render(); }
+                return data;
+            }
+
+            async liveSearch(q) {
+                const drop = document.getElementById('search-dropdown');
+                if (q.length < 2) { drop.style.display = 'none'; return; }
+                const res = await fetch(`${this.apiUrl}/products/search?q=${q}`);
+                const products = await res.json();
+                drop.innerHTML = products.map(p => `
+                    <div class="res-row" onclick="pos.addItem('${p.sku}')">
+                        <span>${p.name} <small>(${p.sku})</small></span>
+                        <b>${p.price} ₽</b>
+                    </div>
+                `).join('');
+                drop.style.display = 'block';
+            }
+
             async addItem(sku) {
-                await this.call('/add-item', {receiptId: this.receipt.id, sku, qty: 1});
-                document.getElementById('scan').value = '';
-            },
-            render() {
-                const r = this.receipt;
-                document.getElementById('ui-total').innerText = r.final_total + ' ₽';
-                document.getElementById('ui-bonus').innerText = '+ ' + r.bonus_accrued;
-                document.getElementById('rows').innerHTML = r.items.map(i => `
-                    <tr><td>${i.product_name}</td><td>${i.quantity}</td><td>${i.base_price}</td><td>${i.row_total}</td></tr>
+                await this.call('/add-item', { receiptId: this.receipt.id, sku, qty: 1 });
+                document.getElementById('search-dropdown').style.display = 'none';
+                document.getElementById('scan-input').value = '';
+            }
+
+            async openCatalog() { document.getElementById('modal-cat').style.display = 'flex'; this.searchCatalog(''); }
+            closeCatalog() { document.getElementById('modal-cat').style.display = 'none'; }
+
+            async searchCatalog(q) {
+                const res = await fetch(`${this.apiUrl}/products/search?q=${q}`);
+                const products = await res.json();
+                document.getElementById('cat-rows').innerHTML = products.map(p => `
+                    <tr>
+                        <td>${p.name}</td>
+                        <td>${p.sku}</td>
+                        <td>${p.stock}</td>
+                        <td><b>${p.price}</b></td>
+                        <td><button class="btn btn-primary" onclick="pos.addItem('${p.sku}')">+</button></td>
+                    </tr>
                 `).join('');
             }
-        };
-        pos.init();
+
+            render() {
+                const r = this.receipt;
+                const modeBadge = document.getElementById('ui-mode');
+                if(r.type === 'sale') {
+                    modeBadge.innerText = 'ПРОДАЖА'; modeBadge.className = 'mode-badge';
+                } else {
+                    modeBadge.innerText = 'ВОЗВРАТ'; modeBadge.className = 'mode-badge return-mode-active';
+                }
+
+                document.getElementById('cart-rows').innerHTML = r.items.map(i => `
+                    <tr>
+                        <td>${i.product_name}<br><small style="color:gray">${i.sku}</small></td>
+                        <td>${i.quantity}</td>
+                        <td>${i.base_price}</td>
+                        <td><b>${i.row_total}</b></td>
+                        <td><button onclick="pos.removeItem('${i.product_id}')" style="border:none; color:red; cursor:pointer;">&times;</button></td>
+                    </tr>
+                `).join('');
+
+                document.getElementById('ui-total').innerText = r.final_total + ' ₽';
+                document.getElementById('ui-bal').innerText = r.client_bonus_balance || '0.00';
+                
+                const proj = document.getElementById('ui-proj');
+                proj.style.color = r.type === 'sale' ? '#16a34a' : '#dc2626';
+                proj.innerText = r.type === 'sale' ? `+ ${r.bonus_accrued} бонусов` : `- ${r.bonus_accrued} бонусов`;
+            }
+
+            async toggleMode() {
+                const newType = this.receipt.type === 'sale' ? 'return' : 'sale';
+                if(confirm('Сбросить текущий чек и сменить режим?')) await this.call('/create', { type: newType });
+            }
+
+            async setCtx() {
+                await this.call('/set-context', {
+                    receiptId: this.receipt.id,
+                    clientId: document.getElementById('sel-client').value,
+                    consultantId: document.getElementById('sel-consultant').value,
+                    priceType: 'retail'
+                });
+            }
+        }
+        const pos = new POS();
     </script>
 </body>
 </html>

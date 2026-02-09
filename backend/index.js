@@ -7,45 +7,48 @@ const port = 3000;
 
 // 1. Настройки подключения к базе данных
 const pool = new Pool({
-  user: 'user',          // Имя пользователя из docker-compose
-  host: 'database',      // Имя сервиса базы в сети Docker
-  database: 'avtokraski_db', 
-  password: 'password',  // Пароль из docker-compose
+  user: 'user',
+  host: 'database',
+  database: 'avtokraski_db',
+  password: 'password',
   port: 5432,
 });
 
-// 2. Настройки сервера
 app.use(cors());
 app.use(express.json());
 
-// 3. Маршруты (Endpoints)
-
-// Проверка работоспособности бэкенда
+// 2. Проверка, что сервер жив
 app.get('/', (req, res) => {
-  res.send('Сервер Автокраски ДВ работает корректно! 🚀');
+  res.send('AK OS Backend (Enterprise Version) is running! 🚀');
 });
 
-// Получение списка красок из таблицы, которую ты создал в Adminer
-app.get('/paints', async (req, res) => {
+// 3. ГЛАВНЫЙ ЗАПРОС: Получить остатки склада (умный запрос)
+app.get('/api/stock', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM paints ORDER BY id ASC');
+    const query = `
+      SELECT 
+        p.name as product_name,          
+        c.name as variant,               
+        c.sku,                           
+        c.barcode,                       
+        COALESCE(sb.quantity, 0) as qty, 
+        COALESCE(pr.price, 0) as price   
+      FROM products p
+      JOIN characteristics c ON p.id = c.product_id
+      LEFT JOIN reg_stock_balance sb ON c.id = sb.characteristic_id
+      LEFT JOIN reg_prices pr ON c.id = pr.characteristic_id
+      ORDER BY p.name ASC
+    `;
+    
+    const result = await pool.query(query);
     res.json(result.rows);
   } catch (err) {
-    console.error('Ошибка при запросе к базе:', err.message);
-    res.status(500).json({ error: 'Ошибка базы данных', details: err.message });
+    console.error('Ошибка запроса:', err.message);
+    res.status(500).json({ error: err.message });
   }
 });
 
-// Тестовая аналитика (твоя заготовка)
-app.get('/sales-stats', (req, res) => {
-    res.json({
-        labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
-        revenue: [45000, 52000, 38000, 61000, 85000, 92000, 41000],
-        ai_insight: "Анализ: Пик продаж в субботу. Рекомендую пополнить запасы бренда Vika."
-    });
-});
-
-// 4. Запуск сервера (ТОЛЬКО ОДИН РАЗ!)
+// 4. Запуск сервера
 app.listen(port, () => {
-  console.log(`✅ Бэкенд запущен на порту ${port}`);
+  console.log(`✅ Сервер AK OS запущен на порту ${port}`);
 });

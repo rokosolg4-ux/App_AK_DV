@@ -68,7 +68,6 @@ app.get('/api/categories', async (req, res) => {
 app.get('/api/stock', async (req, res) => {
   const { category } = req.query;
   try {
-    // В запросе ниже мы четко говорим: взять p.name (имя товара)
     let query = `
       SELECT 
         p.id, 
@@ -81,15 +80,11 @@ app.get('/api/stock', async (req, res) => {
       LEFT JOIN reg_prices pr ON c.id = pr.characteristic_id
       LEFT JOIN reg_stock_balance s ON c.id = s.characteristic_id
     `;
+    if (category) query += ` WHERE p.category_id = ${parseInt(category)}`;
     
-    if (category) {
-      query += ` WHERE p.category_id = ${parseInt(category)}`;
-    }
-
     const result = await pool.query(query);
     res.json(result.rows);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Ошибка базы данных" });
+    res.status(500).json({ error: "Ошибка БД" });
   }
 });

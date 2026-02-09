@@ -2,412 +2,261 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>AK.OS POS | Enterprise</title>
+    <title>РМК | AK.OS</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root {
-            --bg-dark: #0f172a; --glass-bg: rgba(30, 41, 59, 0.7); --glass-border: rgba(255, 255, 255, 0.1);
-            --primary: #3b82f6; --accent: #06b6d4; --danger: #ef4444; --success: #10b981;
-            --text-main: #f8fafc; --text-muted: #94a3b8;
-        }
+        :root { --bg: #0f172a; --glass: rgba(30, 41, 59, 0.9); --accent: #06b6d4; --danger: #ef4444; --success: #10b981; --text: #f8fafc; }
         * { box-sizing: border-box; }
-        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg-dark); color: var(--text-main); height: 100vh; overflow: hidden; }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: grid; grid-template-columns: 1fr 380px; grid-template-rows: 60px 1fr; gap: 10px; padding: 10px; }
+        .panel { background: var(--glass); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 15px; }
+        .top { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; }
+        .main { display: flex; flex-direction: column; }
+        .right { display: flex; flex-direction: column; gap: 15px; }
         
-        /* LAYOUT */
-        .pos-layout { display: grid; grid-template-columns: 1fr 380px; grid-template-rows: 80px 1fr; gap: 15px; padding: 15px; height: 100vh; transition: filter 0.3s; }
-        .glass-panel { background: var(--glass-bg); backdrop-filter: blur(12px); border: 1px solid var(--glass-border); border-radius: 16px; box-shadow: 0 4px 30px rgba(0,0,0,0.3); }
+        button { border: none; border-radius: 6px; cursor: pointer; color: #fff; font-weight: bold; transition: 0.2s; }
+        .btn-green { background: var(--success); } .btn-red { background: var(--danger); } .btn-blue { background: #3b82f6; }
+        .btn-sm { padding: 5px 10px; } .btn-lg { padding: 15px; font-size: 1.2rem; }
         
-        /* TOP BAR */
-        .top-bar { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; padding: 0 25px; transition: background 0.3s; }
-        .top-bar.return-mode { background: rgba(127, 29, 29, 0.6); border-bottom: 2px solid var(--danger); }
-        .receipt-id { font-size: 1.5rem; font-weight: bold; }
-        .status-badge { padding: 5px 10px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; margin-left: 10px; }
-        .status-badge.success { background: var(--success); color: #000; }
-        .status-badge.danger { background: var(--danger); color: #fff; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; color: #94a3b8; border-bottom: 1px solid #333; padding: 10px; }
+        td { padding: 10px; border-bottom: 1px solid #333; }
         
-        .context-controls { display: flex; gap: 20px; }
-        .neon-select { background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: white; padding: 8px; border-radius: 6px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-box { background: #1e293b; padding: 30px; border-radius: 10px; width: 500px; display: flex; flex-direction: column; gap: 15px; }
+        input, select { background: #334155; border: 1px solid #475569; color: #fff; padding: 10px; border-radius: 5px; width: 100%; }
         
-        /* TABLE */
-        .central-area { display: flex; flex-direction: column; overflow: hidden; }
-        .table-container { flex: 1; overflow-y: auto; padding: 10px; }
-        .pos-table { width: 100%; border-collapse: collapse; }
-        .pos-table th { text-align: left; padding: 12px; border-bottom: 1px solid var(--glass-border); color: var(--text-muted); }
-        .pos-table td { padding: 15px 12px; border-bottom: 1px solid rgba(255,255,255,0.03); }
-        .text-right { text-align: right; } .text-center { text-align: center; }
-        .font-bold { font-weight: bold; }
-
-        /* INPUT AREA */
-        .barcode-area { height: 70px; border-top: 1px solid var(--glass-border); display: flex; align-items: center; padding: 0 20px; gap: 15px; background: rgba(0,0,0,0.2); position: relative; }
-        #barcode-input { flex: 1; background: transparent; border: none; color: var(--accent); font-size: 1.2rem; outline: none; }
-        .btn-icon { background: rgba(255,255,255,0.1); border:none; color:white; padding: 10px 20px; border-radius:8px; cursor: pointer; }
-
-        /* RIGHT PANEL */
-        .right-panel { display: flex; flex-direction: column; padding: 25px; gap: 20px; }
-        .total-value { font-size: 3rem; font-weight: bold; color: var(--success); text-align: right; text-shadow: 0 0 20px rgba(16, 185, 129, 0.3); }
-        .sub-totals { display: flex; justify-content: space-between; color: var(--text-muted); font-size: 0.9rem; }
-        .btn-payment { padding: 20px; border: none; border-radius: 10px; font-weight: bold; color: white; cursor: pointer; width: 100%; display: flex; justify-content: center; align-items: center; gap: 10px; }
-        .cash { background: var(--success); } .card { background: var(--primary); } .disabled { background: #555; cursor: not-allowed; }
-        
-        /* SEARCH DROPDOWN */
-        #search-results { position: absolute; bottom: 65px; left: 20px; right: 20px; background: #1e293b; border: 1px solid #334155; max-height: 300px; overflow-y: auto; display: none; z-index: 100; border-radius: 8px; }
-        .search-item { padding: 12px; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; cursor: pointer; }
-        .search-item:hover { background: var(--primary); }
-
-        /* MODALS */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center; }
-        .btn-icon-small { background: transparent; border: 1px solid #555; color: #aaa; border-radius: 4px; cursor: pointer; padding: 4px 8px; }
-        .btn-icon-small.danger:hover { background: var(--danger); color: white; border-color: var(--danger); }
-        .payment-row { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 4px; margin-bottom: 5px; }
-
-        /* THERMAL RECEIPT */
-        .receipt-paper { background: #fff; color: #000; font-family: 'Courier New', monospace; width: 320px; padding: 20px; font-size: 14px; }
-        .r-row { display: flex; justify-content: space-between; }
+        .return-mode { background: #450a0a !important; border-bottom: 2px solid var(--danger); }
+        #search-results { position: absolute; bottom: 70px; left: 20px; right: 20px; background: #1e293b; border: 1px solid #334155; max-height: 300px; overflow-y: auto; display: none; }
+        .search-item { padding: 10px; border-bottom: 1px solid #333; cursor: pointer; display: flex; justify-content: space-between; }
+        .search-item:hover { background: var(--accent); color: #000; }
     </style>
 </head>
 <body>
 
-<div id="loading-overlay" class="modal-overlay" style="z-index:9999; flex-direction:column;">
-    <div style="font-size:2rem; color:var(--accent)"><i class="fa fa-spinner fa-spin"></i></div>
-</div>
+<header class="panel top">
+    <div>
+        <b style="font-size:1.2rem;">ЧЕК #<span id="ui-id">...</span></b>
+        <span id="mode-badge" style="background:var(--success); padding:3px 8px; border-radius:4px; margin-left:10px; color:#000;">ПРОДАЖА</span>
+    </div>
+    <div style="display: flex; gap: 10px;">
+        <button class="btn-sm btn-green" onclick="pos.toggleMode('sale')">ПРОДАЖА</button>
+        <button class="btn-sm btn-red" onclick="pos.toggleMode('return')">ВОЗВРАТ</button>
+        <select id="sel-client" onchange="pos.setCtx()" style="width:150px;"><option value="">Клиент...</option></select>
+        <select id="sel-consultant" onchange="pos.setCtx()" style="width:150px; border-color:var(--danger);"><option value="">Продавец!</option></select>
+        <button class="btn-sm" onclick="pos.closeShift()">Z-ОТЧЕТ</button>
+    </div>
+</header>
 
-<div id="shift-modal" class="modal-overlay">
-    <div class="glass-panel" style="padding:40px; text-align:center;">
-        <h1 style="color:var(--accent)">СМЕНА ЗАКРЫТА</h1>
-        <input type="number" id="inp-start-cash" value="0" style="font-size:2rem; padding:10px; width:200px; text-align:center; margin-bottom:20px;">
-        <br>
-        <button class="btn-payment cash" onclick="posCtrl.openShift()">ОТКРЫТЬ СМЕНУ</button>
+<main class="panel main">
+    <div style="flex:1; overflow-y:auto;">
+        <table>
+            <thead><tr><th>Товар</th><th>Цена</th><th>Кол</th><th>Сумма</th><th></th></tr></thead>
+            <tbody id="list"></tbody>
+        </table>
+    </div>
+    <div style="position: relative; margin-top: 10px; display: flex; gap: 10px;">
+        <input id="scan" type="text" placeholder="Штрихкод / Поиск (F2)..." autofocus>
+        <button class="btn-blue btn-sm" onclick="pos.openCatalog()">КАТАЛОГ</button>
+        <div id="search-results"></div>
+    </div>
+</main>
+
+<aside class="panel right">
+    <div style="text-align: right;">
+        <div style="font-size:3rem; font-weight:bold; color:var(--success);" id="total">0.00</div>
+        <div>Бонусы: <b id="bon-used">0</b></div>
+        <div id="bon-proj" style="font-size:0.9rem;"></div>
+    </div>
+    <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px;">
+        Баланс клиента: <b id="cli-bal">0</b>
+        <div style="display:flex; gap:5px; margin-top:5px;">
+            <input id="inp-bon" type="number" placeholder="Списать...">
+            <button class="btn-sm btn-blue" onclick="pos.applyBonus()">OK</button>
+        </div>
+    </div>
+    <button class="btn-lg btn-blue" onclick="pos.payModal()">ОПЛАТА (F6)</button>
+</aside>
+
+<div id="mod-shift" class="modal">
+    <div class="modal-box" style="text-align: center;">
+        <h2>СМЕНА ЗАКРЫТА</h2>
+        <input id="start-cash" type="number" placeholder="Сумма в кассе">
+        <button class="btn-lg btn-green" onclick="pos.openShift()">ОТКРЫТЬ СМЕНУ</button>
     </div>
 </div>
 
-<div id="catalog-modal" class="modal-overlay">
-    <div class="glass-panel" style="width:800px; height:80vh; display:flex; flex-direction:column; padding:20px;">
-        <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
-            <h2>КАТАЛОГ ТОВАРОВ</h2>
-            <button class="btn-icon-small danger" onclick="posCtrl.closeCatalog()">X</button>
+<div id="mod-pay" class="modal">
+    <div class="modal-box">
+        <h2>ОПЛАТА</h2>
+        <div style="display:flex; justify-content:space-between; font-size:1.2rem;">
+            <span>Надо: <b id="p-left">0</b></span>
+            <span style="color:var(--success)">Сдача: <b id="p-change">0</b></span>
         </div>
-        <input type="text" id="catalog-search-input" placeholder="Поиск..." style="font-size:1.2rem; padding:10px; margin-bottom:10px; background:rgba(0,0,0,0.3); color:white; border:1px solid #555;" oninput="posCtrl.searchCatalog(this.value)">
-        <div style="flex:1; overflow-y:auto;">
-            <table class="pos-table"><tbody id="catalog-list"></tbody></table>
-        </div>
-    </div>
-</div>
-
-<div id="payment-modal" class="modal-overlay">
-    <div class="glass-panel" style="width:500px; padding:30px; display:flex; flex-direction:column; gap:20px;">
-        <h2 style="text-align:center; margin:0;">ОПЛАТА</h2>
-        <div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:8px;">
-            <div class="r-row"><span>К оплате:</span> <b id="pay-total">0.00</b></div>
-            <div class="r-row" style="color:var(--danger)"><span>Осталось:</span> <b id="pay-left">0.00</b></div>
-            <div class="r-row" style="color:var(--success)"><span>Сдача:</span> <b id="pay-change-display">0.00</b></div>
-        </div>
-        <input type="number" id="inp-pay-amount" placeholder="Сумма..." style="font-size:2rem; padding:10px; text-align:right; background:rgba(0,0,0,0.5); color:white; border:1px solid #555;">
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-            <button class="btn-payment cash" onclick="posCtrl.addPayment('cash')">НАЛИЧНЫЕ</button>
-            <button class="btn-payment card" onclick="posCtrl.addPayment('card')">КАРТА</button>
-        </div>
-        <div id="payment-list-container" style="max-height:150px; overflow-y:auto;"></div>
-        <hr style="width:100%; border:0; border-top:1px solid #555;">
-        <button id="btn-fiscalize-final" class="btn-payment disabled" disabled onclick="posCtrl.fiscalize()">ЗАКРЫТЬ ЧЕК</button>
-        <button class="btn-icon-small" onclick="posCtrl.closePaymentModal()">ОТМЕНА</button>
-    </div>
-</div>
-
-<div id="receipt-view-modal" class="modal-overlay">
-    <div id="receipt-content"></div>
-</div>
-
-<div class="pos-layout">
-    <header class="top-bar glass-panel">
-        <div class="meta-info">
-            <span class="receipt-id">ID: <span id="ui-id">...</span></span>
-            <span id="ui-mode-badge" class="status-badge success">ПРОДАЖА</span>
-        </div>
+        <input id="p-amount" type="number" placeholder="Сумма..." style="font-size:2rem; text-align:right;">
         <div style="display:flex; gap:10px;">
-            <button class="btn-icon-small success" onclick="posCtrl.toggleMode('sale')">Продажа</button>
-            <button class="btn-icon-small danger" onclick="posCtrl.toggleMode('return')">Возврат</button>
+            <button class="btn-lg btn-green" style="flex:1" onclick="pos.addPay('cash')">НАЛ</button>
+            <button class="btn-lg btn-blue" style="flex:1" onclick="pos.addPay('card')">КАРТА</button>
         </div>
-        <div class="context-controls">
-            <select id="sel-client" class="neon-select" onchange="posCtrl.handleContextChange()"><option value="">-- Клиент --</option></select>
-            <select id="sel-consultant" class="neon-select" style="border-color:var(--danger)" onchange="posCtrl.handleContextChange()"><option value="">-- Консультант --</option></select>
-        </div>
-        <button class="btn-icon-small" onclick="posCtrl.closeShift()" title="Z-Отчет"><i class="fa fa-power-off"></i></button>
-    </header>
+        <div id="pay-list" style="max-height:100px; overflow-y:auto;"></div>
+        <button id="btn-fisc" class="btn-lg" disabled onclick="pos.fiscalize()">ЗАКРЫТЬ ЧЕК</button>
+        <button class="btn-sm" onclick="document.getElementById('mod-pay').style.display='none'">ОТМЕНА</button>
+    </div>
+</div>
 
-    <main class="central-area glass-panel">
-        <div class="table-container">
-            <table class="pos-table">
-                <thead><tr><th>Товар</th><th class="text-right">Цена</th><th class="text-right">Кол-во</th><th class="text-right">Сумма</th><th></th></tr></thead>
-                <tbody id="items-list"></tbody>
-            </table>
-        </div>
-        <div class="barcode-area">
-            <i class="fa fa-barcode" style="color:#aaa; font-size:1.5rem;"></i>
-            <input type="text" id="barcode-input" placeholder="Штрихкод / Поиск (Enter)...">
-            <button class="btn-icon" onclick="posCtrl.openCatalog()"><i class="fa fa-list"></i> F2</button>
-            <div id="search-results"></div>
-        </div>
-    </main>
-
-    <aside class="right-panel glass-panel">
-        <div style="text-align:right; border-bottom:1px solid var(--glass-border); padding-bottom:20px;">
-            <div style="font-size:0.9rem; color:var(--text-muted)">ИТОГО К ОПЛАТЕ:</div>
-            <div class="total-value" id="ui-final-total">0.00 ₽</div>
-            <div class="sub-totals">
-                <span>Товары: <b id="ui-subtotal">0.00</b></span>
-                <span>Спис. бонусов: <b id="ui-bonus-used">0.00</b></span>
-            </div>
-            <div id="ui-bonus-projection" style="text-align:right; font-size:0.9rem; margin-top:5px;"></div>
-        </div>
-
-        <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:10px;">
-            <div>Баланс: <span id="ui-bonus-balance">0</span></div>
-            <div style="display:flex; gap:5px; margin-top:5px;">
-                <input type="number" id="inp-bonus" placeholder="Списать..." style="width:100%; padding:5px; background:rgba(0,0,0,0.3); border:1px solid #555; color:white;">
-                <button class="btn-icon-small" onclick="posCtrl.applyBonus()">OK</button>
-            </div>
-        </div>
-
-        <button class="btn-payment mix" onclick="posCtrl.openPaymentModal()"><i class="fa fa-credit-card"></i> ОПЛАТА (F6)</button>
-    </aside>
+<div id="mod-cat" class="modal">
+    <div class="modal-box" style="width:800px; height:80vh;">
+        <div style="display:flex; justify-content:space-between;"><h2>КАТАЛОГ</h2> <button onclick="document.getElementById('mod-cat').style.display='none'">X</button></div>
+        <input type="text" oninput="pos.search(this.value)" placeholder="Поиск...">
+        <div style="flex:1; overflow-y:auto;"><table><tbody id="cat-list"></tbody></table></div>
+    </div>
 </div>
 
 <script>
-// --- MOCK DATA FOR DROPDOWNS ---
-// В реальном проекте загружать через API
-const MOCK_CLIENTS = [{id:1, name:'Иван (Мастер)'}, {id:2, name:'ООО Автосервис'}];
-const MOCK_USERS = [{id:1, name:'Кассир 1'}, {id:2, name:'Менеджер А.'}];
-
-class POSController {
+class POS {
     constructor() {
-        this.receipt = null;
-        this.shift = null;
-        this.apiUrl = 'http://localhost:3000/api/pos';
-        this.searchTimer = null;
-        this.fillDropdowns();
-        this.init();
-    }
-
-    fillDropdowns() {
-        const cli = document.getElementById('sel-client');
-        const cons = document.getElementById('sel-consultant');
-        MOCK_CLIENTS.forEach(c => cli.add(new Option(c.name, c.id)));
-        MOCK_USERS.forEach(u => cons.add(new Option(u.name, u.id)));
-    }
-
-    async init() {
-        await this.checkShiftStatus();
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'F2') { e.preventDefault(); this.openCatalog(); }
-            if (e.key === 'F6') { e.preventDefault(); this.openPaymentModal(); }
+        this.api = '/api/pos';
+        this.r = null;
+        this.tmr = null;
+        this.fillSelects();
+        this.checkShift();
+        
+        document.addEventListener('keydown', e => {
+            if(e.key === 'F2') { e.preventDefault(); this.openCatalog(); }
+            if(e.key === 'F6') { e.preventDefault(); this.payModal(); }
         });
-        const inp = document.getElementById('barcode-input');
-        inp.addEventListener('keypress', (e) => { if(e.key === 'Enter' && inp.value) this.handleScan(inp.value); });
-        inp.addEventListener('input', (e) => this.handleSearchInput(e.target.value));
+        const scan = document.getElementById('scan');
+        scan.addEventListener('keypress', e => { if(e.key==='Enter') this.scan(scan.value); });
+        scan.addEventListener('input', e => this.liveSearch(e.target.value));
     }
 
-    setLoading(active) { document.getElementById('loading-overlay').style.display = active ? 'flex' : 'none'; }
-
-    async callApi(endpoint, body = {}, method = 'POST') {
-        this.setLoading(true);
-        try {
-            const opts = { method, headers: {'Content-Type': 'application/json'} };
-            if (method !== 'GET') opts.body = JSON.stringify(body);
-            const res = await fetch(this.apiUrl + endpoint, opts);
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Error');
-            if (data && data.id && endpoint !== '/shift/close') {
-                this.receipt = data;
-                this.render();
-                if(document.getElementById('payment-modal').style.display === 'flex') this.renderPaymentModal();
-            }
-            return data;
-        } catch (e) { alert("Ошибка: " + e.message); throw e; } 
-        finally { this.setLoading(false); }
+    fillSelects() {
+        // MOCK DATA (В реальности грузить с сервера)
+        const cl = document.getElementById('sel-client');
+        const co = document.getElementById('sel-consultant');
+        [{id:1, n:'Частник'}, {id:2, n:'Автосервис'}].forEach(x => cl.add(new Option(x.n, x.id)));
+        [{id:1, n:'Иванов'}, {id:2, n:'Петров'}].forEach(x => co.add(new Option(x.n, x.id)));
     }
 
-    async checkShiftStatus() {
-        const data = await this.callApi('/shift/status', {}, 'GET');
-        const closed = data.status === 'closed';
-        document.querySelector('.pos-layout').style.filter = closed ? 'blur(5px)' : 'none';
-        document.getElementById('shift-modal').style.display = closed ? 'flex' : 'none';
-        if (!closed && !this.receipt) await this.callApi('/create', {});
+    async req(ep, body={}) {
+        const res = await fetch(this.api + ep, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+        const data = await res.json();
+        if(!res.ok) { alert(data.error); throw data.error; }
+        if(data.id) { this.r = data; this.render(); }
+        return data;
     }
 
-    async openShift() {
-        await this.callApi('/shift/open', { startCash: document.getElementById('inp-start-cash').value });
-        this.checkShiftStatus();
+    async checkShift() {
+        const s = await (await fetch(this.api + '/shift/status')).json();
+        document.getElementById('mod-shift').style.display = s.status === 'closed' ? 'flex' : 'none';
+        if(s.status === 'open' && !this.r) this.req('/create');
     }
 
-    async closeShift() {
+    async openShift() { await this.req('/shift/open', { startCash: document.getElementById('start-cash').value }); this.checkShift(); }
+    async closeShift() { 
         if(!confirm('Z-Отчет?')) return;
-        const rep = await this.callApi('/shift/close', {});
-        alert(`Смена закрыта.\nВыручка: ${rep.stats.total_sales}`);
-        location.reload();
+        const res = await this.req('/shift/close');
+        alert(`Выручка: ${res.stats.total_sales}`); location.reload();
     }
 
-    async toggleMode(type) {
-        if(confirm(`Переключить режим на ${type.toUpperCase()}?`)) await this.callApi('/create', { type });
-    }
-
-    handleScan(sku) {
-        this.callApi('/add-item', { receiptId: this.receipt.id, sku, qty: 1 })
-            .then(() => document.getElementById('barcode-input').value = '')
-            .catch(() => { if(confirm('Не найдено. Каталог?')) this.openCatalog(sku); });
-    }
-
-    handleSearchInput(q) {
-        const resBox = document.getElementById('search-results');
-        if (q.length < 2) { resBox.style.display = 'none'; return; }
-        clearTimeout(this.searchTimer);
-        this.searchTimer = setTimeout(async () => {
-            const prods = await (await fetch(`${this.apiUrl}/products/search?q=${q}`)).json();
-            resBox.innerHTML = '';
-            if(!prods.length) return;
-            prods.forEach(p => {
+    scan(sku) { this.req('/add-item', { receiptId: this.r.id, sku, qty: 1 }).then(()=>document.getElementById('scan').value='').catch(()=>{}); }
+    
+    liveSearch(q) {
+        const box = document.getElementById('search-results');
+        if(q.length<2) { box.style.display='none'; return; }
+        clearTimeout(this.tmr);
+        this.tmr = setTimeout(async ()=>{
+            const res = await (await fetch(`${this.api}/products/search?q=${q}`)).json();
+            box.innerHTML = '';
+            if(!res.length) return;
+            res.forEach(p => {
                 const d = document.createElement('div');
                 d.className = 'search-item';
-                d.innerHTML = `<span>${p.name}</span><span>${p.price}</span>`;
-                d.onclick = () => { this.callApi('/add-item', { receiptId: this.receipt.id, sku: p.sku, qty: 1 }); resBox.style.display='none'; document.getElementById('barcode-input').value=''; };
-                resBox.appendChild(d);
+                d.innerHTML = `<span>${p.name}</span><b>${p.price}</b>`;
+                d.onclick = () => { this.req('/add-item', {receiptId: this.r.id, sku: p.sku, qty: 1}); box.style.display='none'; document.getElementById('scan').value=''; };
+                box.appendChild(d);
             });
-            resBox.style.display = 'block';
+            box.style.display = 'block';
         }, 300);
     }
 
-    async openCatalog(q='') {
-        document.getElementById('catalog-modal').style.display = 'flex';
-        document.getElementById('catalog-search-input').value = q;
-        this.searchCatalog(q);
+    render() {
+        if(!this.r) return;
+        const r = this.r;
+        document.getElementById('ui-id').innerText = r.id.substring(0,6);
+        const bdg = document.getElementById('mode-badge');
+        const hdr = document.querySelector('header');
+        if(r.type === 'return') { bdg.innerText='ВОЗВРАТ'; bdg.style.background='#ef4444'; hdr.className='panel top return-mode'; }
+        else { bdg.innerText='ПРОДАЖА'; bdg.style.background='#10b981'; hdr.className='panel top'; }
+
+        document.getElementById('list').innerHTML = r.items.map(i => `<tr><td>${i.product_name}</td><td>${i.base_price}</td><td>${i.quantity}</td><td>${i.row_total}</td><td><button class="btn-sm btn-red" onclick="pos.delItem(${i.product_id})">X</button></td></tr>`).join('');
+        
+        document.getElementById('total').innerText = r.final_total;
+        document.getElementById('bon-used').innerText = r.bonus_used;
+        document.getElementById('cli-bal').innerText = r.client_bonus_balance || 0;
+        
+        const proj = document.getElementById('bon-proj');
+        if(r.client_id) proj.innerHTML = r.type==='sale' ? `<span style="color:#10b981">+${r.bonus_accrued} баллов</span>` : `<span style="color:#ef4444">${r.bonus_accrued} баллов</span>`;
+        else proj.innerHTML='';
+
+        // Update Payment Modal if open
+        if(document.getElementById('mod-pay').style.display === 'flex') this.renderPay();
     }
-    closeCatalog() { document.getElementById('catalog-modal').style.display = 'none'; }
+
+    toggleMode(t) { if(confirm('Сбросить чек?')) this.req('/create', {type: t}); }
+    delItem(pid) { if(confirm('Удалить?')) this.req('/remove-item', {receiptId: this.r.id, productId: pid}); }
+    setCtx() { this.req('/set-context', { receiptId: this.r.id, clientId: document.getElementById('sel-client').value, consultantId: document.getElementById('sel-consultant').value, priceType: 'retail' }); }
+    applyBonus() { this.req('/apply-bonus', { receiptId: this.r.id, amount: document.getElementById('inp-bon').value }); }
     
-    async searchCatalog(q) {
-        const prods = await (await fetch(`${this.apiUrl}/products/search?q=${q}`)).json();
-        this.renderCatalogRows(prods);
+    // PAYMENTS
+    payModal() {
+        if(!this.r.consultant_id) return alert('Выберите продавца!');
+        if(!this.r.items.length) return alert('Чек пуст!');
+        document.getElementById('mod-pay').style.display = 'flex';
+        this.renderPay();
     }
-
-    renderCatalogRows(products) {
-        const tbody = document.getElementById('catalog-list');
-        tbody.innerHTML = '';
-        if (!products.length) { tbody.innerHTML = '<tr><td colspan=4 class="text-center">Нет данных</td></tr>'; return; }
-        products.forEach(p => {
-            const tr = document.createElement('tr');
-            tr.style.cursor='pointer'; tr.style.transition='all 0.2s';
-            tr.innerHTML = `<td><b>${p.sku}</b></td><td>${p.name}</td><td class="text-right">${p.stock}</td><td class="text-right price-cell" style="color:var(--accent)">${p.price}</td>`;
-            tr.onclick = async () => {
-                tr.style.background = 'rgba(16,185,129,0.3)';
-                tr.querySelector('.price-cell').innerHTML = '✅';
-                await this.callApi('/add-item', {receiptId: this.receipt.id, sku: p.sku, qty: 1});
-                setTimeout(() => { tr.style.background=''; tr.querySelector('.price-cell').innerText=p.price; }, 500);
-            };
-            tbody.appendChild(tr);
-        });
+    renderPay() {
+        const r = this.r;
+        document.getElementById('p-left').innerText = r.left_to_pay;
+        document.getElementById('p-change').innerText = r.change_due;
+        const lst = document.getElementById('pay-list');
+        lst.innerHTML = r.payments.map(p => `<div style="display:flex; justify-content:space-between; padding:5px; border-bottom:1px solid #333;"><span>${p.type}: ${p.amount}</span><button class="btn-sm btn-red" onclick="pos.delPay('${p.id}')">X</button></div>`).join('');
+        const btn = document.getElementById('btn-fisc');
+        if(r.is_fully_paid) { btn.disabled = false; btn.className='btn-lg btn-green'; }
+        else { btn.disabled = true; btn.className='btn-lg disabled'; }
     }
-
-    handleContextChange() {
-        this.callApi('/set-context', {
-            receiptId: this.receipt.id,
-            clientId: document.getElementById('sel-client').value || null,
-            consultantId: document.getElementById('sel-consultant').value || null,
-            priceType: 'retail'
-        });
+    addPay(type) {
+        const val = parseFloat(document.getElementById('p-amount').value);
+        let amt = val > 0 ? val : this.r.left_to_pay;
+        if(type==='card' && amt > this.r.left_to_pay) return alert('Карта > Остатка');
+        this.req('/add-payment', { receiptId: this.r.id, type, amount: amt }).then(()=>document.getElementById('p-amount').value='');
     }
-
-    removeItem(pid) { if(confirm('Удалить?')) this.callApi('/remove-item', { receiptId: this.receipt.id, productId: pid }); }
-    applyBonus() { this.callApi('/apply-bonus', { receiptId: this.receipt.id, amount: document.getElementById('inp-bonus').value }); }
-
-    // PAYMENT & FISCAL
-    openPaymentModal() {
-        if(!this.receipt.consultant_id) return alert('Выберите консультанта');
-        if(!this.receipt.items.length) return alert('Чек пуст');
-        document.getElementById('payment-modal').style.display = 'flex';
-        this.renderPaymentModal();
-    }
-    closePaymentModal() { document.getElementById('payment-modal').style.display = 'none'; }
-    
-    addPayment(type) {
-        const r = this.receipt;
-        const val = parseFloat(document.getElementById('inp-pay-amount').value);
-        let amt = 0;
-        if(type === 'card') {
-            if(val > r.left_to_pay) return alert('Карта: сумма > остатка');
-            amt = val > 0 ? val : r.left_to_pay;
-        } else {
-            amt = val > 0 ? val : r.left_to_pay;
-        }
-        if(amt > 0) this.callApi('/add-payment', { receiptId: r.id, type, amount: amt }).then(() => document.getElementById('inp-pay-amount').value='');
-    }
-
-    removePayment(pid) { if(confirm('Отменить оплату?')) this.callApi('/remove-payment', { paymentId: pid }); }
-
+    delPay(id) { if(confirm('Отменить?')) this.req('/remove-payment', { paymentId: id }); }
     fiscalize() {
-        this.callApi('/fiscalize', { receiptId: this.receipt.id }).then(r => {
-            if(r.status === 'fiscalized') {
-                this.closePaymentModal();
-                this.showThermal(r);
+        this.req('/fiscalize', {receiptId: this.r.id}).then(r => {
+            if(r.status==='fiscalized') {
+                document.getElementById('mod-pay').style.display='none';
+                alert(`ЧЕК ЗАКРЫТ!\nСдача: ${r.change_due}\nНачислено: ${r.bonus_accrued}`);
+                this.req('/create');
             }
         });
     }
 
-    showThermal(r) {
-        const m = document.getElementById('receipt-view-modal');
-        const c = document.getElementById('receipt-content');
-        let h = `<div class="receipt-paper"><h3 class="text-center">АВТОКРАСКИ ДВ</h3><p class="text-center">Чек №${r.fiscal_number}</p><hr>`;
-        r.items.forEach(i => h+=`<div class="r-row"><span>${i.product_name}</span></div><div class="r-row"><span>${i.quantity}x${i.base_price}</span><span>${i.row_total}</span></div>`);
-        h+=`<hr><div class="r-row"><b>ИТОГО:</b><b>${r.final_total}</b></div>`;
-        if(r.bonus_accrued > 0) h+=`<div class="r-row">Начислено: ${r.bonus_accrued}</div>`;
-        if(r.bonus_accrued < 0) h+=`<div class="r-row">Списано (Возврат): ${r.bonus_accrued}</div>`;
-        h+=`<br><button class="btn-payment cash" onclick="document.getElementById('receipt-view-modal').style.display='none'; posCtrl.init();">OK</button></div>`;
-        c.innerHTML = h;
-        m.style.display = 'flex';
+    // CATALOG
+    openCatalog() { document.getElementById('mod-cat').style.display = 'flex'; this.search(''); }
+    async search(q) {
+        const res = await (await fetch(`${this.api}/products/search?q=${q}`)).json();
+        document.getElementById('cat-list').innerHTML = res.map(p => `
+            <tr onclick="pos.catAdd('${p.sku}', this)" style="cursor:pointer">
+                <td>${p.name}</td><td>${p.price}</td><td>${p.stock}</td><td>+</td>
+            </tr>`).join('');
     }
-
-    renderPaymentModal() {
-        const r = this.receipt;
-        document.getElementById('pay-total').innerText = r.final_total;
-        document.getElementById('pay-left').innerText = r.left_to_pay;
-        document.getElementById('pay-change-display').innerText = r.change_due;
-        
-        const lc = document.getElementById('payment-list-container');
-        lc.innerHTML = '';
-        r.payments.forEach(p => {
-            const d = document.createElement('div');
-            d.className = 'payment-row';
-            d.innerHTML = `<span>${p.type}: ${p.amount}</span><button class="btn-icon-small danger" onclick="posCtrl.removePayment('${p.id}')">X</button>`;
-            lc.appendChild(d);
-        });
-
-        const btn = document.getElementById('btn-fiscalize-final');
-        if(r.is_fully_paid) { btn.disabled=false; btn.classList.remove('disabled'); }
-        else { btn.disabled=true; btn.classList.add('disabled'); }
-    }
-
-    render() {
-        const r = this.receipt;
-        if(!r) return;
-        document.getElementById('ui-id').innerText = r.id.substring(0,8);
-        const bdg = document.getElementById('ui-mode-badge');
-        const tb = document.querySelector('.top-bar');
-        if(r.type === 'return') { bdg.innerText='ВОЗВРАТ'; bdg.className='status-badge danger'; tb.classList.add('return-mode'); }
-        else { bdg.innerText='ПРОДАЖА'; bdg.className='status-badge success'; tb.classList.remove('return-mode'); }
-        
-        const selCli = document.getElementById('sel-client');
-        if(r.client_id && selCli.value != r.client_id) selCli.value = r.client_id;
-
-        document.getElementById('items-list').innerHTML = r.items.map(i => `<tr><td>${i.product_name}</td><td class="text-right">${i.base_price}</td><td class="text-right">${i.quantity}</td><td class="text-right font-bold">${i.row_total}</td><td class="text-center"><button class="btn-icon-small danger" onclick="posCtrl.removeItem(${i.product_id})">X</button></td></tr>`).join('');
-        
-        document.getElementById('ui-subtotal').innerText = r.subtotal;
-        document.getElementById('ui-bonus-used').innerText = r.bonus_used;
-        document.getElementById('ui-final-total').innerText = r.final_total + ' ₽';
-        document.getElementById('ui-bonus-balance').innerText = r.client_bonus_balance || 0;
-        
-        const proj = document.getElementById('ui-bonus-projection');
-        if(r.client_id) proj.innerHTML = r.type==='sale' ? `<span style="color:var(--success)">+${r.bonus_accrued} баллов</span>` : `<span style="color:var(--danger)">${r.bonus_accrued} баллов</span>`;
-        else proj.innerHTML='';
+    async catAdd(sku, el) {
+        el.style.background = '#10b981';
+        await this.req('/add-item', { receiptId: this.r.id, sku, qty: 1 });
+        setTimeout(()=>el.style.background='', 300);
     }
 }
-const posCtrl = new POSController();
+const pos = new POS();
 </script>
 </body>
 </html>

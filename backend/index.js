@@ -52,3 +52,39 @@ app.get('/api/stock', async (req, res) => {
 app.listen(port, () => {
   console.log(`✅ Сервер AK OS запущен на порту ${port}`);
 });
+
+// Роут для получения списка всех категорий (папок)
+app.get('/api/categories', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM categories ORDER BY name');
+        res.json(result.rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Ошибка сервера при получении категорий');
+    }
+});
+
+// Роут для получения товаров (всех или по категории)
+app.get('/api/stock', async (req, res) => {
+    const categoryId = req.query.category;
+    try {
+        let query = `
+            SELECT p.id, p.name, c.sku, pr.price, s.quantity as qty 
+            FROM products p
+            LEFT JOIN characteristics c ON p.id = c.product_id
+            LEFT JOIN reg_prices pr ON c.id = pr.characteristic_id
+            LEFT JOIN reg_stock_balance s ON c.id = s.characteristic_id
+        `;
+        if (categoryId) {
+            query += ` WHERE p.category_id = $1`;
+            const result = await pool.query(query, [categoryId]);
+            res.json(result.rows);
+        } else {
+            const result = await pool.query(query);
+            res.json(result.rows);
+        }
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Ошибка сервера при получении товаров');
+    }
+});

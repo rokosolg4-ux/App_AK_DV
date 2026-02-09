@@ -8,7 +8,7 @@ app.use(express.json());
 
 const pool = new Pool({
   user: 'user',
-  host: 'database', // ПРАВИЛЬНЫЙ ХОСТ
+  host: 'database',
   database: 'avtokraski_db',
   password: 'password',
   port: 5432,
@@ -24,12 +24,12 @@ app.get('/api/categories', async (req, res) => {
   }
 });
 
-// 2. СПИСОК ТОВАРОВ (Для плиток)
+// 2. СПИСОК ТОВАРОВ (Для главной)
 app.get('/api/stock', async (req, res) => {
   const { category } = req.query;
   try {
     let queryText = `
-      SELECT p.id, p.name AS product_name, p.vendor_code, pr.price, s.quantity as qty, p.category_id 
+      SELECT p.id, p.name AS product_name, p.internal_code, c.sku, pr.price, s.quantity as qty, p.category_id 
       FROM products p
       LEFT JOIN characteristics c ON p.id = c.product_id
       LEFT JOIN reg_prices pr ON c.id = pr.characteristic_id
@@ -48,30 +48,37 @@ app.get('/api/stock', async (req, res) => {
   }
 });
 
-// 3. ПОЛНАЯ КАРТОЧКА ТОВАРА (Как в 1С)
+// 3. ПОЛНАЯ КАРТОЧКА 1С (MEGA ROUTE)
 app.get('/api/product/:id', async (req, res) => {
   const { id } = req.params;
   try {
-    const query = `
-      SELECT 
-        p.*, 
-        p.name AS product_name,
-        pr.price, 
-        s.quantity as qty,
-        c.name as cat_name
+    // Основные данные
+    const productQuery = `
+      SELECT p.*, c.sku as vendor_code, pr.price, s.quantity as qty
       FROM products p
-      LEFT JOIN categories c ON p.category_id = c.id
-      LEFT JOIN characteristics ch ON p.id = ch.product_id
-      LEFT JOIN reg_prices pr ON ch.id = pr.characteristic_id
-      LEFT JOIN reg_stock_balance s ON ch.id = s.characteristic_id
+      LEFT JOIN characteristics c ON p.id = c.product_id
+      LEFT JOIN reg_prices pr ON c.id = pr.characteristic_id
+      LEFT JOIN reg_stock_balance s ON c.id = s.characteristic_id
       WHERE p.id = $1
     `;
-    const result = await pool.query(query, [id]);
-    if (result.rows.length === 0) return res.status(404).json({error: 'Товар не найден'});
-    res.json(result.rows[0]);
+    const productRes = await pool.query(productQuery, [id]);
+    
+    if (productRes.rows.length === 0) return res.status(404).json({error: 'Нет товара'});
+
+    // Подгружаем мин. остатки (таблица из скриншота)
+    const stocksQuery = `SELECT * FROM product_min_stocks WHERE product_id = $1`;
+    const stocksRes = await pool.query(stocksQuery, [id]);
+
+    // Отдаем всё вместе
+    const fullData = {
+        ...productRes.rows[0],
+        min_stocks: stocksRes.rows // массив для таблицы складов
+    };
+    
+    res.json(fullData);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-app.listen(3000, () => console.log('SERVER READY'));
+app.listen(3000, () => console.log('1C SERVER READY'));

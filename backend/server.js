@@ -1,46 +1,51 @@
 const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
 const { Pool } = require('pg');
+const cors = require('cors');
 
 const app = express();
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json());
 
-// НАСТРОЙКИ ПОДКЛЮЧЕНИЯ (ПРОВЕРЬ ПАРОЛЬ!)
+// НАСТРОЙКИ
 const pool = new Pool({
     user: 'postgres',
     host: 'localhost',
-    database: 'avtokraski_db', // Как у тебя в Adminer
-    password: 'pass',          // Пароль из docker-compose.yml (скорее всего pass или postgres)
+    database: 'avtokraski_db',
+    password: 'pass',
     port: 5432,
 });
 
-const getUserId = (req) => 1;
-
-const executeSql = async (res, sql, params) => {
+const execute = async (res, sql, params) => {
     try {
         const result = await pool.query(sql, params);
-        res.json(result.rows[0].json_result);
+        res.json(result.rows[0]?.json_result || { success: true });
     } catch (err) {
-        console.error('SQL Error:', err.message);
+        console.error(err);
         res.status(400).json({ error: err.message });
     }
 };
 
-app.get('/api/pos/shift/status', (req, res) => executeSql(res, "SELECT pos.api_get_shift_status($1) as json_result", [getUserId(req)]));
-app.post('/api/pos/shift/open', (req, res) => executeSql(res, "SELECT pos.api_open_shift($1, $2) as json_result", [getUserId(req), req.body.startCash]));
-app.post('/api/pos/shift/close', (req, res) => executeSql(res, "SELECT pos.api_close_shift($1) as json_result", [getUserId(req)]));
-app.post('/api/pos/create', (req, res) => executeSql(res, "SELECT pos.api_create_receipt($1, $2) as json_result", [getUserId(req), req.body.type || 'sale']));
-app.get('/api/pos/products/search', (req, res) => executeSql(res, "SELECT pos.api_search_products($1, $2) as json_result", [req.query.q || '', req.query.priceType || 'retail']));
-app.post('/api/pos/add-item', (req, res) => executeSql(res, "SELECT pos.api_add_item($1, $2, $3) as json_result", [req.body.receiptId, req.body.sku, req.body.qty]));
-app.post('/api/pos/remove-item', (req, res) => executeSql(res, "SELECT pos.api_remove_item($1, $2) as json_result", [req.body.receiptId, req.body.productId]));
-app.post('/api/pos/set-context', (req, res) => executeSql(res, "SELECT pos.api_set_context($1, $2, $3, $4) as json_result", [req.body.receiptId, req.body.clientId, req.body.consultantId, req.body.priceType]));
-app.post('/api/pos/apply-bonus', (req, res) => executeSql(res, "SELECT pos.api_apply_bonus($1, $2) as json_result", [req.body.receiptId, req.body.amount]));
-app.post('/api/pos/add-payment', (req, res) => executeSql(res, "SELECT pos.api_add_payment($1, $2, $3) as json_result", [req.body.receiptId, req.body.type, req.body.amount]));
-app.post('/api/pos/remove-payment', (req, res) => executeSql(res, "SELECT pos.api_remove_payment($1) as json_result", [req.body.paymentId]));
-app.post('/api/pos/fiscalize', (req, res) => executeSql(res, "SELECT pos.api_fiscalize($1) as json_result", [req.body.receiptId]));
-
-app.listen(3000, () => {
-    console.log(`AK.OS POS Server running on port 3000`);
+app.post('/api/pos/create', (req, res) => {
+    const sql = `INSERT INTO pos.receipts (status, type, shift_id) VALUES ('draft', $1, 1) RETURNING pos.get_receipt_json(id) as json_result`;
+    execute(res, sql, [req.body.type || 'sale']);
 });
+
+app.get('/api/pos/products/search', async (req, res) => {
+    const q = req.query.q || '';
+    const result = await pool.query("SELECT sku, name, price_retail as price, stock_qty as stock FROM public.products WHERE name ILIKE $1 OR sku ILIKE $1 LIMIT 10", [`%${q}%`]);
+    res.json(result.rows);
+});
+
+app.post('/api/pos/add-item', (req, res) => {
+    const sql = `
+        WITH ins AS (
+            INSERT INTO pos.receipt_items (receipt_id, product_id, quantity, base_price)
+            SELECT $1, id, $3, price_retail FROM public.products WHERE sku = $2
+            RETURNING receipt_id
+        )
+        SELECT pos.get_receipt_json(receipt_id) as json_result FROM ins;
+    `;
+    execute(res, sql, [req.body.receiptId, req.body.sku, req.body.qty]);
+});
+
+app.listen(3000, () => console.log('Server PRO running on port 3000'));

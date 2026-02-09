@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Настройки базы данных
+// Настройки подключения к базе
 const pool = new Pool({
   user: 'user',
   host: 'localhost',
@@ -15,19 +15,20 @@ const pool = new Pool({
   port: 5432,
 });
 
-// 1. РОУТ КАТЕГОРИЙ
+// 1. РОУТ КАТЕГОРИЙ (ПАПКИ)
 app.get('/api/categories', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM categories ORDER BY id');
     res.json(result.rows);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ error: "Ошибка при загрузке категорий" });
   }
 });
 
-// 2. РОУТ ТОВАРОВ (С ФИЛЬТРАЦИЕЙ)
+// 2. РОУТ ТОВАРОВ (СКЛАД + ФИЛЬТР)
 app.get('/api/stock', async (req, res) => {
-  const { category } = req.query; // Получаем ID выбранной папки
+  const { category } = req.query; 
   
   try {
     let queryText = `
@@ -46,21 +47,22 @@ app.get('/api/stock', async (req, res) => {
     
     const queryParams = [];
     
-    // ГЛАВНАЯ ЛОГИКА: Если фронтенд прислал ID папки, добавляем фильтр
+    // Если выбрали папку - фильтруем
     if (category) {
       queryText += ` WHERE p.category_id = $1`;
       queryParams.push(category);
     }
     
-    queryText += ` ORDER BY p.name ASC`; // Сортируем по алфавиту
+    queryText += ` ORDER BY p.name ASC`; 
 
     const result = await pool.query(queryText, queryParams);
     res.json(result.rows);
 
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Ошибка сервера" });
+    res.status(500).json({ error: "Ошибка при загрузке товаров" });
   }
 });
 
-app.listen(3000, () => console.log('SERVER RESTARTED: Filter Logic Active'));
+// Запуск сервера
+app.listen(3000, () => console.log('SERVER IS ALIVE on port 3000'));

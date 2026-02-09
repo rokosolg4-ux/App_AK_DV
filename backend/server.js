@@ -1,10 +1,12 @@
 const express = require('express');
-const { Pool } = require('pg');
 const cors = require('cors');
+const pool = require('./db'); // Мы "импортируем" настройки из db.js
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Дальше идет твоя логика API...
 
 const pool = new Pool({
     user: 'postgres',

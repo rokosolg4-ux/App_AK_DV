@@ -71,20 +71,24 @@ app.get('/api/stock', async (req, res) => {
     let query = `
       SELECT 
         p.id, 
-        p.name AS name, 
+        p.name AS product_name, 
         c.sku, 
         pr.price, 
-        s.quantity AS qty 
+        s.quantity as qty 
       FROM products p
       LEFT JOIN characteristics c ON p.id = c.product_id
       LEFT JOIN reg_prices pr ON c.id = pr.characteristic_id
       LEFT JOIN reg_stock_balance s ON c.id = s.characteristic_id
     `;
-    if (category) query += ` WHERE p.category_id = ${parseInt(category)}`;
     
+    if (category) {
+      query += ` WHERE p.category_id = ${parseInt(category)}`;
+    }
+
     const result = await pool.query(query);
     res.json(result.rows);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Ошибка БД" });
   }
 });

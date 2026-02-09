@@ -2,13 +2,13 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>РМК АВТОКРАСКИ ДВ</title>
+    <title>РМК АВТОКРАСКИ ДВ | PRO</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         :root { --1c-bg: #f6f6f6; --1c-blue: #2b4b77; --1c-border: #c0c0c0; }
         body { margin: 0; font-family: Arial, sans-serif; background: var(--1c-bg); height: 100vh; display: grid; grid-template-rows: 40px 1fr 60px; }
         
-        /* HEADER - Информационная плотность */
+        /* HEADER - Копируем 1С */
         header { background: #fff; border-bottom: 1px solid var(--1c-border); display: flex; align-items: center; padding: 0 15px; gap: 20px; font-size: 12px; }
         .badge { background: #e1f5fe; border: 1px solid #03a9f4; padding: 2px 8px; border-radius: 3px; font-weight: bold; }
 
@@ -19,19 +19,18 @@
         th { background: #eee; border: 1px solid var(--1c-border); padding: 5px; font-size: 11px; text-align: left; }
         td { border: 1px solid var(--1c-border); padding: 8px; font-size: 13px; }
 
-        /* SIDEBAR - Расчетный блок */
+        /* SIDEBAR - Блок итогов */
         .side-panel { display: flex; flex-direction: column; gap: 5px; }
         .card { background: #fff; border: 1px solid var(--1c-border); padding: 10px; }
         .total-display { margin-top: auto; background: #fff; border: 2px solid var(--1c-blue); padding: 15px; text-align: right; }
         .total-price { font-size: 2.2rem; font-weight: bold; color: var(--1c-blue); }
 
-        /* FOOTER - Управление */
+        /* FOOTER - Управление сканированием */
         footer { background: #fff; border-top: 1px solid var(--1c-border); display: flex; align-items: center; padding: 0 10px; gap: 10px; }
         #scan-input { flex: 1; padding: 10px; font-size: 16px; border: 1px solid var(--1c-blue); }
         .btn-1c { background: #fff; border: 1px solid var(--1c-border); padding: 10px 15px; font-size: 12px; cursor: pointer; font-weight: bold; }
-        .btn-1c:hover { background: #e0e0e0; }
         
-        .search-results { position: absolute; bottom: 65px; left: 10px; width: 400px; background: #fff; border: 1px solid var(--1c-blue); box-shadow: 0 -5px 15px rgba(0,0,0,0.2); display: none; }
+        .search-results { position: absolute; bottom: 65px; left: 10px; width: 450px; background: #fff; border: 1px solid var(--1c-blue); box-shadow: 0 -5px 15px rgba(0,0,0,0.2); display: none; z-index: 100; }
         .res-item { padding: 8px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; }
     </style>
 </head>
@@ -56,7 +55,7 @@
         </div>
         <div class="side-panel">
             <div class="card">
-                <div style="font-size: 11px; color: gray;">БОНУСЫ</div>
+                <div style="font-size: 11px; color: gray;">БОНУСНАЯ ПРОГРАММА</div>
                 <div style="display: flex; justify-content: space-between; margin-top: 5px;">
                     <span>К начислению:</span> <b style="color: green;">+ 0.00</b>
                 </div>
@@ -72,7 +71,7 @@
     <footer>
         <button class="btn-1c">ПОДБОР (F2)</button>
         <div style="position: relative; flex: 1;">
-            <input type="text" id="scan-input" placeholder="Поиск товара или штрихкод..." autocomplete="off">
+            <input type="text" id="scan-input" placeholder="Введите название или штрихкод для поиска..." autocomplete="off">
             <div id="search-box" class="search-results"></div>
         </div>
         <button class="btn-1c" style="color: red;">ВОЗВРАТ</button>
@@ -80,7 +79,7 @@
 
     <script>
         const pos = {
-            apiUrl: '/api/pos', // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ
+            apiUrl: '/api/pos', // Используем относительный путь для работы через IP
             receipt: null,
             async call(ep, body = {}) {
                 const res = await fetch(this.apiUrl + ep, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
@@ -107,7 +106,7 @@
             },
             render() {
                 document.getElementById('ui-total').innerText = this.receipt.final_total + ' ₽';
-                document.getElementById('cart-body').innerHTML = this.receipt.items.map(i => `
+                document.getElementById('cart-body').innerHTML = (this.receipt.items || []).map(i => `
                     <tr><td>${i.product_name}<br><small>${i.sku}</small></td><td>${i.quantity}</td><td>${i.base_price}</td><td>${i.row_total}</td></tr>
                 `).join('');
             }

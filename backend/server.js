@@ -9,12 +9,12 @@ app.use(express.json());
 const pool = new Pool({
     user: 'postgres',
     host: 'localhost',
-    database: 'avtokraski_db', // Указано верно
+    database: 'avtokraski_db', // Имя базы из Adminer
     password: 'pass', 
     port: 5432,
 });
 
-// Универсальный обработчик запросов
+// Универсальный обработчик запросов для связи с БД
 const runQuery = async (res, sql, params) => {
     try {
         const result = await pool.query(sql, params);
